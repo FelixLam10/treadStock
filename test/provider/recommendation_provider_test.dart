@@ -1,6 +1,7 @@
 // T-PRV-02: StrategyRecommendationState error vs empty-data distinction.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:stockpilot/features/analysis/domain/analysis_engine.dart';
 import 'package:stockpilot/features/stock/data/stock_api_service.dart';
@@ -112,6 +113,32 @@ void main() {
         api.klineCalls,
         lessThanOrEqualTo(initialRecommendationCandidateLimit + 1),
       );
+
+      notifier.dispose();
+      await db.close();
+    });
+
+    test('严格策略无命中时展示观察候选并标记为 fallback', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final strategyService = StrategyService(db: db);
+      await strategyService.init();
+      final strategy = strategyService.getStrategies().first;
+      await (db.update(db.strategies)..where((t) => t.id.equals(strategy.id)))
+          .write(const StrategiesCompanion(recommendThreshold: Value(11)));
+      await strategyService.reloadCache();
+
+      final notifier = StrategyRecommendationNotifier(
+        strategyService,
+        CountingStockApiService(),
+        StrategyScoringService(AnalysisEngine()),
+      );
+
+      await notifier.loadRecommendations();
+
+      expect(notifier.state.isLoading, false);
+      expect(notifier.state.groups, isNotEmpty);
+      expect(notifier.state.groups.first.isFallbackCandidates, true);
+      expect(notifier.state.groups.first.recommendations, isNotEmpty);
 
       notifier.dispose();
       await db.close();

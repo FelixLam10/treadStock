@@ -49,6 +49,7 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
   }
 
   void _onSearchChanged(String value) {
+    setState(() {});
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       ref.read(watchlistProvider.notifier).searchStock(value);
@@ -59,6 +60,7 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
     _searchController.clear();
     ref.read(watchlistProvider.notifier).searchStock('');
     _searchFocusNode.unfocus();
+    setState(() {});
   }
 
   /// Handle adding a search result to watchlist.
@@ -159,34 +161,47 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
                       ]
                     : null,
               ),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                onChanged: _onSearchChanged,
-                autocorrect: false,
-                enableSuggestions: false,
-                keyboardType: TextInputType.text,
-                style: TextStyle(fontSize: 14, color: context.sc.textPrimary),
-                decoration: InputDecoration(
-                  hintText: '搜索股票代码或名称',
-                  hintStyle: TextStyle(fontSize: 14, color: context.sc.gray400),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    size: 20,
-                    color: context.sc.gray500,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.text,
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  onTap: () {
+                    _searchFocusNode.requestFocus();
+                    setState(() {});
+                  },
+                  onChanged: _onSearchChanged,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.search,
+                  style: TextStyle(fontSize: 14, color: context.sc.textPrimary),
+                  decoration: InputDecoration(
+                    hintText: '搜索股票代码或名称',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: context.sc.gray400,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 20,
+                      color: _isSearchFocused
+                          ? StockColors.brand
+                          : context.sc.gray500,
+                    ),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? GestureDetector(
+                            onTap: _clearSearch,
+                            child: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: context.sc.gray500,
+                            ),
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? GestureDetector(
-                          onTap: _clearSearch,
-                          child: Icon(
-                            Icons.close,
-                            size: 18,
-                            color: context.sc.gray500,
-                          ),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),

@@ -20,11 +20,13 @@ class StrategyRecommendation {
   final Strategy strategy;
   final List<DailyRecommendation> recommendations;
   final EnvironmentMatchResult? environmentMatch;
+  final bool isFallbackCandidates;
 
   const StrategyRecommendation({
     required this.strategy,
     required this.recommendations,
     this.environmentMatch,
+    this.isFallbackCandidates = false,
   });
 
   /// Whether the environment is unfavourable (matchScore < 50).
@@ -192,7 +194,7 @@ class StrategyRecommendationNotifier
           strategy,
           klineCache,
         );
-        final recs =
+        var recs =
             scored
                 .where(
                   (item) =>
@@ -203,6 +205,24 @@ class StrategyRecommendationNotifier
               ..sort(
                 (a, b) => (b.score?.score ?? 0).compareTo(a.score?.score ?? 0),
               );
+        var isFallbackCandidates = false;
+
+        // If live/fallback market data is available but a strict strategy
+        // threshold filters everything out, surface a few best-scored
+        // observation candidates. This prevents the first-run experience from
+        // looking broken while keeping the copy conservative in the UI.
+        if (recs.isEmpty && scored.isNotEmpty) {
+          isFallbackCandidates = true;
+          recs =
+              scored
+                  .where((item) => item.score != null && item.score!.score > 0)
+                  .toList()
+                ..sort(
+                  (a, b) =>
+                      (b.score?.score ?? 0).compareTo(a.score?.score ?? 0),
+                );
+          recs = recs.take(3).toList();
+        }
 
         // When environment is poor, apply weight multiplier to displayed scores
         List<DailyRecommendation> adjustedRecs = recs;
@@ -241,6 +261,7 @@ class StrategyRecommendationNotifier
             strategy: strategy,
             recommendations: adjustedRecs,
             environmentMatch: envMatch,
+            isFallbackCandidates: isFallbackCandidates,
           ),
         );
 

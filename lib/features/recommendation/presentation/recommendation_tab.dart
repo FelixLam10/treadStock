@@ -39,6 +39,7 @@ class _FlatItem {
   final StockScore? score;
   final DecisionResult decision;
   final StockPrediction? prediction;
+  final bool isFallbackCandidate;
 
   const _FlatItem({
     required this.rec,
@@ -46,6 +47,7 @@ class _FlatItem {
     required this.score,
     required this.decision,
     this.prediction,
+    this.isFallbackCandidate = false,
   });
 
   String get code => rec.code;
@@ -97,6 +99,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
           score: rec.score,
           decision: decision,
           prediction: rec.prediction,
+          isFallbackCandidate: group.isFallbackCandidates,
         );
 
         // Deduplicate: keep the one with the highest score.
@@ -116,8 +119,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
   Map<RecommendFilter, int> _countByFilter(List<_FlatItem> items) {
     return {
       RecommendFilter.all: items.length,
-      RecommendFilter.bandLow:
-          items.where((i) => i.isBandLow).length,
+      RecommendFilter.bandLow: items.where((i) => i.isBandLow).length,
       RecommendFilter.focus: items
           .where((i) => i.decision.signal == DecisionSignal.strongWatch)
           .length,
@@ -175,8 +177,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 _showBanner)
               CacheBanner(
                 message: state.errorMessage ?? '数据更新失败，显示缓存数据',
-                timestamp:
-                    '数据更新于 ${Formatters.formatTime(state.lastUpdated!)}',
+                timestamp: '数据更新于 ${Formatters.formatTime(state.lastUpdated!)}',
                 onClose: () => setState(() => _showBanner = false),
               ),
 
@@ -185,8 +186,8 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
               child: state.isLoading
                   ? _buildLoadingList()
                   : state.showErrorState && state.lastUpdated == null
-                      ? _buildErrorState(state)
-                      : _buildContent(state, watchedCodes),
+                  ? _buildErrorState(state)
+                  : _buildContent(state, watchedCodes),
             ),
           ],
         ),
@@ -199,7 +200,10 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
     final predictionTime = state.lastUpdated;
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        AppTheme.pagePadding, 12, AppTheme.pagePadding, 4,
+        AppTheme.pagePadding,
+        12,
+        AppTheme.pagePadding,
+        4,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,7 +392,8 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
   Widget _buildFilterBar(Map<RecommendFilter, int> counts) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.pagePadding, vertical: 6,
+        horizontal: AppTheme.pagePadding,
+        vertical: 6,
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -403,19 +408,15 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 7,
+                    horizontal: 14,
+                    vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: active
-                        ? StockColors.brand
-                        : context.sc.bgSecondary,
+                    color: active ? StockColors.brand : context.sc.bgSecondary,
                     borderRadius: BorderRadius.circular(AppTheme.radiusFull),
                     border: active
                         ? null
-                        : Border.all(
-                            color: context.sc.borderLight,
-                            width: 0.5,
-                          ),
+                        : Border.all(color: context.sc.borderLight, width: 0.5),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -424,8 +425,9 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                         f.label,
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight:
-                              active ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: active
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                           color: active
                               ? Colors.white
                               : context.sc.textSecondary,
@@ -435,14 +437,16 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                         const SizedBox(width: 5),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 0.5,
+                            horizontal: 5,
+                            vertical: 0.5,
                           ),
                           decoration: BoxDecoration(
                             color: active
                                 ? Colors.white.withValues(alpha: 0.25)
                                 : context.sc.bgTertiary,
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.radiusFull),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusFull,
+                            ),
                           ),
                           child: Text(
                             '$count',
@@ -480,7 +484,8 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
           children: [
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: AppTheme.pagePadding, vertical: 8,
+                horizontal: AppTheme.pagePadding,
+                vertical: 8,
               ),
               child: Row(
                 children: [_skeletonBox(80, 28), const SizedBox(width: 8)],
@@ -529,17 +534,21 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
     // isEmptyData  → 行情源返回空（非网络问题）
     // hasError     → 请求异常（通常是网络或服务端问题）
     if (state.isEmptyData) {
-      return _refreshable(const EmptyState(
-        icon: Icons.cloud_off,
-        title: '暂无行情数据',
-        subtitle: '行情源暂未返回数据，请稍后下拉刷新',
-      ));
+      return _refreshable(
+        const EmptyState(
+          icon: Icons.cloud_off,
+          title: '暂无行情数据',
+          subtitle: '行情源暂未返回数据，请稍后下拉刷新',
+        ),
+      );
     }
-    return _refreshable(const EmptyState(
-      icon: Icons.signal_wifi_off,
-      title: '数据更新失败',
-      subtitle: '检查网络后下拉刷新，或稍后再试',
-    ));
+    return _refreshable(
+      const EmptyState(
+        icon: Icons.signal_wifi_off,
+        title: '数据更新失败',
+        subtitle: '检查网络后下拉刷新，或稍后再试',
+      ),
+    );
   }
 
   // ── Main content ──────────────────────────────────────────────
@@ -549,22 +558,26 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
     Set<String> watchedCodes,
   ) {
     if (state.groups.isEmpty) {
-      return _refreshable(EmptyState(
-        icon: Icons.inbox_outlined,
-        title: state.hasEnabledStrategies ? '暂无匹配标的' : '暂无启用策略',
-        subtitle: state.hasEnabledStrategies
-            ? '当前策略可能较严格，或行情数据暂不可用。\n可下拉刷新，或前往策略页降低阈值。'
-            : '请前往策略管理启用至少一个策略',
-      ));
+      return _refreshable(
+        EmptyState(
+          icon: Icons.inbox_outlined,
+          title: state.hasEnabledStrategies ? '暂无匹配标的' : '暂无启用策略',
+          subtitle: state.hasEnabledStrategies
+              ? '当前策略可能较严格，或行情数据暂不可用。\n可下拉刷新，或前往策略页降低阈值。'
+              : '请前往策略管理启用至少一个策略',
+        ),
+      );
     }
 
     final allItems = _buildFlatItems(state);
     if (allItems.isEmpty) {
-      return _refreshable(const EmptyState(
-        icon: Icons.inbox_outlined,
-        title: '暂无匹配标的',
-        subtitle: '可下拉刷新，或前往策略页调整参数',
-      ));
+      return _refreshable(
+        const EmptyState(
+          icon: Icons.inbox_outlined,
+          title: '暂无匹配标的',
+          subtitle: '可下拉刷新，或前往策略页调整参数',
+        ),
+      );
     }
 
     final counts = _countByFilter(allItems);
@@ -587,7 +600,9 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 icon: Icons.filter_alt_off_outlined,
                 title: '${_activeFilter.label}暂无标的',
                 subtitle: '当前维度没有匹配的标的，可清除筛选查看全部',
-                actionText: _activeFilter == RecommendFilter.all ? null : '清除筛选',
+                actionText: _activeFilter == RecommendFilter.all
+                    ? null
+                    : '清除筛选',
                 onAction: _activeFilter == RecommendFilter.all
                     ? null
                     : () => setState(() => _activeFilter = RecommendFilter.all),
@@ -610,6 +625,9 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 // 需求 2：标识当前推荐的标的是哪个策略选出来的，让用户一眼
                 // 看清来源（StockListItem 已内置 strategyName 渲染为「策略 X」摘要行）。
                 strategyName: item.strategy.name,
+                riskText: item.isFallbackCandidate
+                    ? '观察候选：未达到策略阈值，仅供复盘参考'
+                    : null,
                 isWatched: isWatched,
                 onWatchToggle: isWatched
                     ? null
