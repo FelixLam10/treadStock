@@ -19,6 +19,7 @@ dependencies:
 
   # HTTP client
   dio: ^5.7.0
+  web: ^1.1.1
 
   # Local database (Drift / SQLite)
   drift: ^2.22.1
@@ -84,6 +85,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/data/baostock_industries.json
 
 # MSIX packaging config (Windows installer).
 # Note: MSIX is unsigned (no paid code-signing cert). Users install via

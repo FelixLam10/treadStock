@@ -1,11 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 
+import '../../../shared/database/database_connection.dart';
 import '../domain/stock_models.dart';
 
 part 'kline_cache.g.dart';
@@ -27,7 +24,7 @@ class KlineCaches extends Table {
 /// Drift database for K-line cache storage.
 @DriftDatabase(tables: [KlineCaches])
 class KlineCacheDatabase extends _$KlineCacheDatabase {
-  KlineCacheDatabase() : super(_openConnection());
+  KlineCacheDatabase() : super(openDatabaseConnection('kline_cache'));
 
   KlineCacheDatabase.forTesting(super.e);
 
@@ -71,7 +68,8 @@ class KlineCacheDatabase extends _$KlineCacheDatabase {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (row.expiresAt <= now) return null;
 
-    return _parseKlinesJson(row.klinesJson);
+    final klines = _parseKlinesJson(row.klinesJson);
+    return klines.isEmpty ? null : klines;
   }
 
   /// Save K-line data to cache with a configurable TTL.
@@ -148,13 +146,4 @@ class KlineCacheDatabase extends _$KlineCacheDatabase {
       preClose: (m['preClose'] as num).toDouble(),
     );
   }
-}
-
-/// Opens a SQLite database connection for the K-line cache.
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'kline_cache.sqlite'));
-    return NativeDatabase.createInBackground(file);
-  });
 }

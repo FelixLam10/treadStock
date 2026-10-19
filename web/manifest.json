@@ -1,12 +1,16 @@
 {
     "name": "股势 TrendStock",
     "short_name": "股势",
-    "start_url": ".",
+    "id": "./",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "股势 TrendStock - 股票波段分析决策助手",
+    "background_color": "#FFFFFF",
+    "theme_color": "#2563EB",
+    "description": "股票趋势观察与策略复盘工具",
     "orientation": "portrait-primary",
+    "lang": "zh-CN",
+    "categories": ["finance", "productivity"],
     "prefer_related_applications": false,
     "icons": [
         {

@@ -45,3 +45,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .gstack/
+
+# Local market proxy dependencies and runtime state
+/deploy/market-proxy/node_modules/
+/deploy/market-proxy/.wrangler/
+/deploy/market-proxy/.dev.vars
+/deploy/market-proxy/.env*

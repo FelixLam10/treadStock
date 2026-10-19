@@ -3,10 +3,12 @@ class ApiConstants {
   ApiConstants._();
 
   // Base URLs
-  static const String eastmoneyPush = 'https://push2.eastmoney.com/api/qt';
+  static const String eastmoneyPush = 'https://push2delay.eastmoney.com/api/qt';
   static const String eastmoneyPushHis = 'https://push2his.eastmoney.com/api/qt';
   static const String eastmoneySearch = 'https://searchapi.eastmoney.com/api/suggest/get';
   static const String eastmoneySearchApi = 'https://search-api-web.eastmoney.com/search/jsonp';
+  static const String eastmoneyF10 =
+      'https://emweb.securities.eastmoney.com/PC_HSF10';
   static const String sinaFinance = 'https://hq.sinajs.cn/list=';
 
   // API tokens — split into prefix + suffix to increase reverse-engineering difficulty

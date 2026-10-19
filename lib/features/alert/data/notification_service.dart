@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../../../core/constants/api_constants.dart';
@@ -64,6 +63,10 @@ class NotificationService {
   /// Safe to call more than once; subsequent calls are no-ops.
   Future<void> init() async {
     if (_initialized) return;
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     // DarwinInitializationSettings covers both iOS AND macOS (flutter_local_
@@ -94,9 +97,9 @@ class NotificationService {
     // never return in test/headless environments, which would otherwise hang
     // initialization forever. 3s is plenty for a real launch.
     try {
-      final details = await _plugin
-          .getNotificationAppLaunchDetails()
-          .timeout(const Duration(seconds: 3));
+      final details = await _plugin.getNotificationAppLaunchDetails().timeout(
+        const Duration(seconds: 3),
+      );
       if (details != null && details.didNotificationLaunchApp) {
         _launchPayload = details.notificationResponse?.payload;
       }
@@ -106,7 +109,7 @@ class NotificationService {
       debugPrint('[NotificationService] launch details unavailable: $e\n$st');
     }
 
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       await _plugin
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
@@ -132,7 +135,8 @@ class NotificationService {
   /// Request notification authorization. Returns whether it was granted.
   /// On Android < 13 permission is granted at install time so this returns true.
   Future<bool> requestPermissions() async {
-    if (Platform.isIOS) {
+    if (kIsWeb) return false;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
       final granted = await _plugin
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
@@ -140,7 +144,7 @@ class NotificationService {
           ?.requestPermissions(alert: true, badge: true, sound: true);
       return granted ?? false;
     }
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       final granted = await _plugin
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
@@ -178,6 +182,7 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
+    if (kIsWeb) return false;
     if (!_initialized) await init();
     if (isQuietHour()) {
       return false;

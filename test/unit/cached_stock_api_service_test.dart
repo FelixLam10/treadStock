@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stockpilot/features/stock/data/cached_stock_api_service.dart';
 import 'package:stockpilot/features/stock/data/stock_api_service.dart';
 import 'package:stockpilot/features/stock/data/kline_cache.dart';
@@ -14,7 +15,9 @@ import 'package:stockpilot/features/stock/domain/stock_models.dart';
 // ---------------------------------------------------------------------------
 class FakeStockApiService implements StockApiService {
   int fetchStockKlineCallCount = 0;
+  int fetchHotspotKlinesCallCount = 0;
   List<DailyKline>? _response;
+  List<StockQuote> recommendationResponse = const [];
   String? lastCode;
   String? lastMarket;
   int? lastDays;
@@ -40,8 +43,34 @@ class FakeStockApiService implements StockApiService {
   @override
   Future<List<StockQuote>> fetchAllMarketQuotes() async => [];
   @override
+  Future<List<StockQuote>> fetchHotspotMarketQuotes() async => [];
+  @override
+  Future<List<DailyKline>> fetchHotspotKlines(
+    String stockCode, {
+    required String market,
+    int days = 6,
+  }) async {
+    fetchHotspotKlinesCallCount++;
+    lastCode = stockCode;
+    lastMarket = market;
+    lastDays = days;
+    return _response ?? [];
+  }
+
+  @override
   Future<List<StockQuote>> fetchRecommendationCandidates({
     int limit = 50,
+    String market = StockMarket.aShare,
+  }) async => recommendationResponse.take(limit).toList();
+  @override
+  Future<List<MarketSectorQuote>> fetchMarketSectors({
+    required bool concept,
+    int limit = 100,
+  }) async => [];
+  @override
+  Future<List<SectorStockQuote>> fetchSectorConstituents(
+    String sectorCode, {
+    int limit = 200,
   }) async => [];
   @override
   Future<StockQuote?> fetchStockQuote(
@@ -57,8 +86,14 @@ class FakeStockApiService implements StockApiService {
     int pageSize = 10,
   }) async => [];
   @override
+  Future<StockFundamentals?> fetchStockFundamentals(
+    String stockCode, {
+    required String stockName,
+    String market = StockMarket.sh,
+  }) async => null;
+  @override
   String getSecid(String code, String market) =>
-      '${market == "SH" ? 1 : 0}.$code';
+      '${StockMarket.eastMoneySecidPrefix(market)}.$code';
 }
 
 void main() {
@@ -67,6 +102,7 @@ void main() {
   late CachedStockApiService service;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     fakeApi = FakeStockApiService();
     cacheDb = KlineCacheDatabase.forTesting(NativeDatabase.memory());
     service = CachedStockApiService(api: fakeApi, cache: cacheDb);
@@ -99,6 +135,25 @@ void main() {
       volume: 200000,
       amount: 2000000,
       preClose: 10.5,
+    ),
+  ];
+
+  final testQuotes = [
+    const StockQuote(
+      code: 'DRAM',
+      name: 'Roundhill Memory ETF',
+      market: StockMarket.us,
+      price: 60,
+      changePct: 1.2,
+      changeAmt: 0.7,
+      openPrice: 59,
+      highPrice: 61,
+      lowPrice: 58.5,
+      preClose: 59.3,
+      volume: 100000,
+      turnover: 1.1,
+      marketCap: 20,
+      industry: 'ETF',
     ),
   ];
 
@@ -147,9 +202,9 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // 缓存未命中：API 返回空列表也存储
+  // 缓存未命中：API 返回空列表不缓存
   // ---------------------------------------------------------------------------
-  test('缓存未命中且 API 返回空列表时也缓存', () async {
+  test('缓存未命中且 API 返回空列表时允许下次重试', () async {
     fakeApi.setResponse([]);
 
     final result = await service.fetchStockKline(
@@ -161,14 +216,14 @@ void main() {
     expect(result, isEmpty);
     expect(fakeApi.fetchStockKlineCallCount, 1);
 
-    // 第二次调用不应调 API
+    // 空结果通常是数据源故障，第二次调用应再次尝试 API。
     final result2 = await service.fetchStockKline(
       '000001',
       market: 'SZ',
       days: 60,
     );
     expect(result2, isEmpty);
-    expect(fakeApi.fetchStockKlineCallCount, 1);
+    expect(fakeApi.fetchStockKlineCallCount, 2);
   });
 
   // ---------------------------------------------------------------------------
@@ -219,6 +274,77 @@ void main() {
     await service.fetchStockKline('600519', market: 'SH', days: 60);
     await service.fetchStockKline('600519', market: 'SH', days: 120);
     expect(fakeApi.fetchStockKlineCallCount, 2);
+  });
+
+  test('热点专用 K 线入口调用专用数据源并复用本地缓存', () async {
+    fakeApi.setResponse(testKlines);
+
+    final first = await service.fetchHotspotKlines(
+      '600519',
+      market: 'SH',
+      days: 6,
+    );
+    final second = await service.fetchHotspotKlines(
+      '600519',
+      market: 'SH',
+      days: 6,
+    );
+
+    _expectKlinesEqual(first, testKlines);
+    _expectKlinesEqual(second, testKlines);
+    expect(fakeApi.fetchHotspotKlinesCallCount, 1);
+    expect(fakeApi.fetchStockKlineCallCount, 0);
+  });
+
+  test('推荐候选成功后持久化，空响应时跨实例恢复', () async {
+    fakeApi.recommendationResponse = testQuotes;
+    final fresh = await service.fetchRecommendationCandidates(
+      market: StockMarket.us,
+    );
+    expect(fresh.single.code, 'DRAM');
+    expect(service.lastRecommendationCandidatesWereCached, false);
+
+    final offlineApi = FakeStockApiService();
+    final restoredService = CachedStockApiService(
+      api: offlineApi,
+      cache: cacheDb,
+    );
+    final restored = await restoredService.fetchRecommendationCandidates(
+      market: StockMarket.us,
+    );
+
+    expect(restored.single.code, 'DRAM');
+    expect(restored.single.industry, 'ETF');
+    expect(restoredService.lastRecommendationCandidatesWereCached, true);
+    expect(restoredService.lastRecommendationCandidatesUpdatedAt, isNotNull);
+  });
+
+  test('推荐候选缓存按市场隔离', () async {
+    fakeApi.recommendationResponse = testQuotes;
+    await service.fetchRecommendationCandidates(market: StockMarket.us);
+    fakeApi.recommendationResponse = const [];
+
+    final hk = await service.fetchRecommendationCandidates(
+      market: StockMarket.hk,
+    );
+
+    expect(hk, isEmpty);
+    expect(service.lastRecommendationCandidatesWereCached, false);
+  });
+
+  test('超过七天的推荐候选缓存不再使用', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'recommendation_quotes_v1_${StockMarket.us}',
+      '{"updatedAt":"2020-01-01T00:00:00.000","quotes":[]}',
+    );
+
+    final result = await service.fetchRecommendationCandidates(
+      market: StockMarket.us,
+    );
+
+    expect(result, isEmpty);
+    expect(service.lastRecommendationCandidatesWereCached, false);
   });
 
   // ---------------------------------------------------------------------------
