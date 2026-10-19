@@ -25,6 +25,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      HAS_SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -118,7 +120,7 @@ jobs:
       # Slack notification (optional)
       # ----------------------------------------
       - name: Notify Slack on success
-        if: always()
+        if: always() && env.HAS_SLACK_WEBHOOK == 'true'
         uses: slackapi/slack-github-action@v1
         with:
           payload: |

@@ -18,7 +18,7 @@
 
 ### 验证与限制
 - 静态分析 0 issues；发布范围回归 533 项、代理测试 5 项通过；Web Release 编译成功。
-- 概念板块、正式 PWA 部署与真机验收仍待完成，本次未附安装包。
+- 概念板块、正式 PWA 部署与真机验收仍待完成；已补发 Android arm64、macOS 双架构和 Windows x64 安装包，签名限制见发布说明。
 - 完整说明见 [v0.1.7](docs/releases/v0.1.7.md)，分批提测见 [提测清单](docs/releases/v0.1.7-qa.md)。
 
 ---
