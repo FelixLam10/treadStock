@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:stockpilot/core/theme/app_semantic_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -59,7 +60,9 @@ class _FlatItem {
 /// Recommendation list tab (Tab 1).
 /// Flat list with dimension switching: 全部 | 波段低位 | 重点关注 | 观望.
 class RecommendationTab extends ConsumerStatefulWidget {
-  const RecommendationTab({super.key});
+  final ValueListenable<int>? homeRequest;
+
+  const RecommendationTab({super.key, this.homeRequest});
 
   @override
   ConsumerState<RecommendationTab> createState() => _RecommendationTabState();
@@ -68,10 +71,12 @@ class RecommendationTab extends ConsumerStatefulWidget {
 class _RecommendationTabState extends ConsumerState<RecommendationTab> {
   bool _showBanner = true;
   RecommendFilter _activeFilter = RecommendFilter.all;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    widget.homeRequest?.addListener(_resetToHome);
     // Use post-frame callback so the first build completes before we kick
     // off async data loads; this avoids pending-timer assertions in widget
     // tests where the tree is disposed right after the first frame.
@@ -79,6 +84,46 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
       if (!mounted) return;
       ref.read(strategyRecommendationProvider.notifier).loadRecommendations();
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant RecommendationTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.homeRequest != widget.homeRequest) {
+      oldWidget.homeRequest?.removeListener(_resetToHome);
+      widget.homeRequest?.addListener(_resetToHome);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.homeRequest?.removeListener(_resetToHome);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _resetToHome() {
+    if (!mounted) return;
+
+    setState(() {
+      _activeFilter = RecommendFilter.all;
+      _showBanner = true;
+    });
+
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    }
+
+    final recommendationState = ref.read(strategyRecommendationProvider);
+    if (recommendationState.selectedMarket != RecommendationMarket.aShare) {
+      ref
+          .read(strategyRecommendationProvider.notifier)
+          .loadRecommendations(market: RecommendationMarket.aShare);
+    }
   }
 
   /// Flatten all strategy groups into a deduplicated, sorted list.
@@ -172,7 +217,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
 
             // Cache/Offline banner: show when an error/empty-data occurred but
             // we still have previously cached groups (lastUpdated != null).
-            if (state.showErrorState &&
+            if ((state.showErrorState || state.isStaleData) &&
                 state.lastUpdated != null &&
                 _showBanner)
               CacheBanner(
@@ -181,9 +226,17 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 onClose: () => setState(() => _showBanner = false),
               ),
 
+            _buildMarketFilterBar(state.selectedMarket),
+
+            if (state.isLoading && state.lastUpdated != null)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                color: StockColors.brand,
+              ),
+
             // Content
             Expanded(
-              child: state.isLoading
+              child: state.isLoading && state.lastUpdated == null
                   ? _buildLoadingList()
                   : state.showErrorState && state.lastUpdated == null
                   ? _buildErrorState(state)
@@ -275,6 +328,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 Icons.lightbulb_outline,
                 StockColors.brand,
                 context.sc.brandLight,
+                tooltip: '当前参与推荐计算的策略数 / 策略库总数。停用策略不会参与筛选。',
               ),
               const SizedBox(width: 8),
               _buildMetricCard(
@@ -287,14 +341,16 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
                 data.avgHitRate >= 0.5
                     ? StockColors.upLight
                     : context.sc.bgWarning,
+                tooltip: '启用策略中已有有效 5 日复盘样本的策略命中率平均值；样本不足时显示 --。仅供复盘参考。',
               ),
               const SizedBox(width: 8),
               _buildMetricCard(
                 sentimentLabel,
-                '市场情绪',
+                '策略信号热度',
                 Icons.trending_up,
                 sentimentColor,
                 context.sc.bgTertiary,
+                tooltip: '根据今日启用策略产生的推荐数量和高分信号数量估算。它反映策略信号活跃度，不代表全市场涨跌情况，仅供观察。',
               ),
             ],
           ),
@@ -353,35 +409,40 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
     String label,
     IconData icon,
     Color iconColor,
-    Color bgColor,
-  ) {
+    Color bgColor, {
+    required String tooltip,
+  }) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 14, color: iconColor),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: AppTextStyles.numberSm.copyWith(
-                color: context.sc.textPrimary,
-                fontWeight: FontWeight.w600,
+      child: Tooltip(
+        key: ValueKey('overview-metric-$label'),
+        message: tooltip,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 14, color: iconColor),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: AppTextStyles.numberSm.copyWith(
+                  color: context.sc.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTextStyles.micro.copyWith(
-                color: context.sc.textTertiary,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: AppTextStyles.micro.copyWith(
+                  color: context.sc.textTertiary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -479,6 +540,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
       onRefresh: () =>
           ref.read(strategyRecommendationProvider.notifier).refresh(),
       child: SingleChildScrollView(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
@@ -520,6 +582,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
       onRefresh: () =>
           ref.read(strategyRecommendationProvider.notifier).refresh(),
       child: SingleChildScrollView(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
@@ -588,6 +651,7 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
       onRefresh: () =>
           ref.read(strategyRecommendationProvider.notifier).refresh(),
       child: ListView(
+        controller: _scrollController,
         children: [
           // Dimension filter bar
           _buildFilterBar(counts),
@@ -662,6 +726,60 @@ class _RecommendationTabState extends ConsumerState<RecommendationTab> {
           const DisclaimerLabel(),
           const SizedBox(height: 64),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMarketFilterBar(RecommendationMarket selected) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        8,
+        AppTheme.pagePadding,
+        4,
+      ),
+      child: Row(
+        children: RecommendationMarket.values.map((market) {
+          final isSelected = market == selected;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: isSelected
+                  ? null
+                  : () {
+                      setState(() => _activeFilter = RecommendFilter.all);
+                      ref
+                          .read(strategyRecommendationProvider.notifier)
+                          .loadRecommendations(market: market);
+                    },
+              child: AnimatedContainer(
+                duration: AppTheme.fastDuration,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? StockColors.brand
+                      : context.sc.bgSecondary,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+                  border: Border.all(
+                    color: isSelected ? StockColors.brand : context.sc.border,
+                  ),
+                ),
+                child: Text(
+                  market.label,
+                  style: AppTextStyles.caption.copyWith(
+                    color: isSelected ? Colors.white : context.sc.textSecondary,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

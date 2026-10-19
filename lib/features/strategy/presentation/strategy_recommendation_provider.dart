@@ -12,6 +12,17 @@ import '../../../shared/providers.dart';
 
 @visibleForTesting
 const int initialRecommendationCandidateLimit = 16;
+const Duration recommendationLoadTimeout = Duration(seconds: 12);
+
+enum RecommendationMarket {
+  aShare('A股', StockMarket.aShare),
+  hk('港股', StockMarket.hk),
+  us('美股', StockMarket.us);
+
+  final String label;
+  final String apiMarket;
+  const RecommendationMarket(this.label, this.apiMarket);
+}
 
 // ── Recommendation by Strategy ─────────────────────────────────
 
@@ -41,8 +52,10 @@ class StrategyRecommendationState {
   final bool hasError;
   final bool isEmptyData;
   final bool hasEnabledStrategies;
+  final bool isStaleData;
   final String? errorMessage;
   final DateTime? lastUpdated;
+  final RecommendationMarket selectedMarket;
 
   const StrategyRecommendationState({
     this.groups = const [],
@@ -50,8 +63,10 @@ class StrategyRecommendationState {
     this.hasError = false,
     this.isEmptyData = false,
     this.hasEnabledStrategies = true,
+    this.isStaleData = false,
     this.errorMessage,
     this.lastUpdated,
+    this.selectedMarket = RecommendationMarket.aShare,
   });
 
   /// Whether the UI should show an error / empty-data placeholder instead of
@@ -65,8 +80,10 @@ class StrategyRecommendationState {
     bool? hasError,
     bool? isEmptyData,
     bool? hasEnabledStrategies,
+    bool? isStaleData,
     String? errorMessage,
     DateTime? lastUpdated,
+    RecommendationMarket? selectedMarket,
   }) {
     return StrategyRecommendationState(
       groups: groups ?? this.groups,
@@ -74,8 +91,10 @@ class StrategyRecommendationState {
       hasError: hasError ?? this.hasError,
       isEmptyData: isEmptyData ?? this.isEmptyData,
       hasEnabledStrategies: hasEnabledStrategies ?? this.hasEnabledStrategies,
+      isStaleData: isStaleData ?? this.isStaleData,
       errorMessage: errorMessage ?? this.errorMessage,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      selectedMarket: selectedMarket ?? this.selectedMarket,
     );
   }
 }
@@ -85,6 +104,9 @@ class StrategyRecommendationNotifier
   final StrategyService _strategyService;
   final StockApiService _apiService;
   final StrategyScoringService _scoringService;
+  final Map<RecommendationMarket, StrategyRecommendationState>
+  _marketSnapshots = {};
+  int _requestVersion = 0;
 
   StrategyRecommendationNotifier(
     this._strategyService,
@@ -92,14 +114,20 @@ class StrategyRecommendationNotifier
     this._scoringService,
   ) : super(const StrategyRecommendationState());
 
-  Future<void> loadRecommendations() async {
-    state = state.copyWith(
+  Future<void> loadRecommendations({RecommendationMarket? market}) async {
+    final requestVersion = ++_requestVersion;
+    final selectedMarket = market ?? state.selectedMarket;
+    final snapshot = _marketSnapshots[selectedMarket];
+    state = StrategyRecommendationState(
+      groups: snapshot?.groups ?? const [],
       isLoading: true,
-      hasError: false,
-      isEmptyData: false,
+      hasEnabledStrategies: snapshot?.hasEnabledStrategies ?? true,
+      lastUpdated: snapshot?.lastUpdated,
+      selectedMarket: selectedMarket,
     );
     try {
       await _strategyService.init();
+      if (requestVersion != _requestVersion) return;
       final enabledStrategies = _strategyService.getEnabledStrategies();
       if (enabledStrategies.isEmpty) {
         state = state.copyWith(
@@ -113,22 +141,36 @@ class StrategyRecommendationNotifier
       // ── Parallel fetch: candidates + market index ─────────────
       // Fetch recommendation candidates and the market-index K-line in
       // parallel to shave one RTT off the critical path.
-      final candidatesFuture = _apiService.fetchRecommendationCandidates();
-      final indexKlineFuture = _apiService
-          .fetchStockKline('000001', market: 'SH')
-          .catchError((_) => <DailyKline>[]);
+      final candidatesFuture = _apiService
+          .fetchRecommendationCandidates(market: selectedMarket.apiMarket)
+          .timeout(recommendationLoadTimeout);
+      final indexKlineFuture = selectedMarket == RecommendationMarket.aShare
+          ? _apiService
+                .fetchStockKline('000001', market: StockMarket.sh)
+                .timeout(recommendationLoadTimeout)
+                .catchError((_) => <DailyKline>[])
+          : Future.value(<DailyKline>[]);
       final results = await Future.wait([candidatesFuture, indexKlineFuture]);
+      if (requestVersion != _requestVersion) return;
       final quotes = results[0] as List<StockQuote>;
       final indexKlines = results[1] as List<DailyKline>;
+      final cacheMetadata = _apiService is RecommendationCacheMetadata
+          ? _apiService as RecommendationCacheMetadata
+          : null;
+      final isStaleData =
+          cacheMetadata?.lastRecommendationCandidatesWereCached ?? false;
 
       if (quotes.isEmpty) {
         // Quote source returned empty — distinct from a real load error so the
         // UI can show a data-source message rather than a network error.
-        state = state.copyWith(
+        state = StrategyRecommendationState(
+          groups: snapshot?.groups ?? const [],
           isLoading: false,
           isEmptyData: true,
           hasEnabledStrategies: true,
-          errorMessage: '暂无行情数据',
+          errorMessage: '${selectedMarket.label}暂无行情数据',
+          lastUpdated: snapshot?.lastUpdated,
+          selectedMarket: selectedMarket,
         );
         return;
       }
@@ -149,6 +191,7 @@ class StrategyRecommendationNotifier
       await _strategyService.backfillActualChanges({
         for (final quote in quotes) quote.code: quote.price,
       });
+      if (requestVersion != _requestVersion) return;
 
       final topStocks = quotes
           .take(initialRecommendationCandidateLimit)
@@ -194,11 +237,13 @@ class StrategyRecommendationNotifier
           strategy,
           klineCache,
         );
+        if (requestVersion != _requestVersion) return;
         var recs =
             scored
                 .where(
                   (item) =>
                       item.score != null &&
+                      (!strategy.isRuleBased || item.matchesStrategyRules) &&
                       item.score!.score >= effectiveThreshold,
                 )
                 .toList()
@@ -241,6 +286,7 @@ class StrategyRecommendationNotifier
               changePct: rec.changePct,
               isBandLow: rec.isBandLow,
               prediction: rec.prediction,
+              matchesStrategyRules: rec.matchesStrategyRules,
               score: StockScore(
                 score: adjusted,
                 maScore: rec.score!.maScore,
@@ -282,6 +328,7 @@ class StrategyRecommendationNotifier
               )
               .toList(),
         );
+        if (requestVersion != _requestVersion) return;
       }
 
       // Sort groups by strategy hit rate descending
@@ -291,17 +338,29 @@ class StrategyRecommendationNotifier
         return rateB.compareTo(rateA);
       });
 
-      state = state.copyWith(
+      final freshState = StrategyRecommendationState(
         groups: groups,
         isLoading: false,
         hasEnabledStrategies: true,
-        lastUpdated: DateTime.now(),
+        isStaleData: isStaleData,
+        errorMessage: isStaleData ? '行情暂不可用，显示最近缓存' : null,
+        lastUpdated: isStaleData
+            ? cacheMetadata?.lastRecommendationCandidatesUpdatedAt
+            : DateTime.now(),
+        selectedMarket: selectedMarket,
       );
+      _marketSnapshots[selectedMarket] = freshState;
+      state = freshState;
     } catch (e) {
-      state = state.copyWith(
+      if (requestVersion != _requestVersion) return;
+      state = StrategyRecommendationState(
+        groups: snapshot?.groups ?? const [],
         isLoading: false,
         hasError: true,
+        hasEnabledStrategies: snapshot?.hasEnabledStrategies ?? true,
         errorMessage: '数据更新失败',
+        lastUpdated: snapshot?.lastUpdated,
+        selectedMarket: selectedMarket,
       );
     }
   }
@@ -452,6 +511,7 @@ class StrategyRecommendationNotifier
           score: score,
           isBandLow: score.isBandLow,
           prediction: prediction,
+          matchesStrategyRules: scoreResult.isMatched,
         );
       }
       return null;

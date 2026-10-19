@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_text_styles.dart';
 import 'shared/providers.dart';
+import 'shared/widgets/app_bottom_navigation.dart';
 import 'features/alert/data/notification_service.dart';
 import 'features/onboarding/data/onboarding_service.dart';
 import 'features/onboarding/presentation/onboarding_page.dart';
 import 'features/recommendation/presentation/recommendation_tab.dart';
+import 'features/hotspot/presentation/hotspot_tab.dart';
+import 'features/hotspot/presentation/hotspot_scheme_edit_page.dart';
+import 'features/hotspot/presentation/hotspot_scheme_manage_page.dart';
+import 'features/hotspot/domain/hotspot_models.dart';
 import 'features/watchlist/presentation/watchlist_tab.dart';
 import 'features/stock/presentation/stock_detail_page.dart';
 import 'features/strategy/presentation/strategy_tab.dart';
@@ -20,11 +27,14 @@ import 'features/strategy/presentation/strategy_compare_page.dart';
 import 'features/strategy/presentation/strategy_template_page.dart';
 import 'features/strategy/presentation/strategy_tuner_page.dart';
 import 'features/strategy/presentation/strategy_creation_guide_page.dart';
+import 'features/strategy/presentation/strategy_import_page.dart';
+import 'features/strategy/presentation/strategy_version_history_page.dart';
 import 'features/strategy/domain/strategy_models.dart';
 import 'main.dart' show RiskDisclaimerDialog;
 
 /// Root router configuration.
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _recommendationHomeRequest = ValueNotifier<int>(0);
 
 class AppRouter {
   AppRouter._();
@@ -60,7 +70,16 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/recommend',
-                builder: (context, state) => const RecommendationTab(),
+                builder: (context, state) =>
+                    RecommendationTab(homeRequest: _recommendationHomeRequest),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/hotspots',
+                builder: (context, state) => const HotspotTab(),
               ),
             ],
           ),
@@ -87,53 +106,115 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return StockDetailPage(
-            code: state.pathParameters['code'] ?? '',
-            name: extra?['name'] as String? ?? '',
-            market: extra?['market'] as String? ?? 'SH',
-            strategyId: extra?['strategyId'] as String?,
-            strategyName: extra?['strategyName'] as String?,
+          return PersistentNavigationPage(
+            child: StockDetailPage(
+              code: state.pathParameters['code'] ?? '',
+              name: extra?['name'] as String? ?? '',
+              market: extra?['market'] as String? ?? 'SH',
+              strategyId: extra?['strategyId'] as String?,
+              strategyName: extra?['strategyName'] as String?,
+            ),
           );
         },
       ),
+      GoRoute(
+        path: '/hotspot/schemes',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PersistentNavigationPage(
+            sectionIndex: 1,
+            child: HotspotSchemeManagePage(
+              initialMode: _hotspotMode(extra?['mode']),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/hotspot/scheme/new',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PersistentNavigationPage(
+            sectionIndex: 1,
+            child: HotspotSchemeEditPage(
+              initialMode: _hotspotMode(extra?['mode']),
+              copyDefault: extra?['copyDefault'] as bool? ?? false,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/hotspot/scheme/:id/edit',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PersistentNavigationPage(
+          sectionIndex: 1,
+          child: HotspotSchemeEditPage(schemeId: state.pathParameters['id']),
+        ),
+      ),
       // 注意：GoRouter 按声明顺序匹配，字面量子路由（new/create/knowledge/
-      // compare/templates）必须声明在 /strategy/:id 之前；否则 :id 会先吞掉
-      // 这些字面值（例如把 "templates" 当作策略 id），导致 StrategyDetailPage
-      // 报「未找到该策略」。带二级段的路由（:id/edit、:id/backtest、:id/tuner）
-      // 不受影响，因为 :id 不会匹配带 "/" 的多段路径。
+      // compare/templates/import）必须声明在 /strategy/:id 之前；版本、回测等
+      // 多段详情路由也统一放在 :id 之前，便于维护。
+      // 否则字面值可能被当作策略 id，导致 StrategyDetailPage 报「未找到该策略」。
       GoRoute(
         path: '/strategy/new',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StrategyEditPage(),
+        builder: (context, state) => const PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyEditPage(),
+        ),
       ),
       GoRoute(
         path: '/strategy/create',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StrategyCreationGuidePage(),
+        builder: (context, state) => const PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyCreationGuidePage(),
+        ),
       ),
       GoRoute(
         path: '/strategy/knowledge',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StrategyKnowledgePage(),
+        builder: (context, state) => const PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyKnowledgePage(),
+        ),
       ),
       GoRoute(
         path: '/strategy/compare',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StrategyComparePage(),
+        builder: (context, state) => const PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyComparePage(),
+        ),
       ),
       GoRoute(
         path: '/strategy/templates',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const StrategyTemplatePage(),
+        builder: (context, state) => const PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyTemplatePage(),
+        ),
+      ),
+      GoRoute(
+        path: '/strategy/import',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyImportPage(),
+        ),
       ),
       GoRoute(
         path: '/strategy/:id/edit',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return StrategyEditPage(
-            strategyId: state.pathParameters['id'],
-            suggestion: extra?['suggestion'] as StrategySuggestion?,
+          return PersistentNavigationPage(
+            sectionIndex: 3,
+            child: StrategyEditPage(
+              strategyId: state.pathParameters['id'],
+              suggestion: extra?['suggestion'] as StrategySuggestion?,
+            ),
           );
         },
       ),
@@ -142,20 +223,40 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return BacktestConfigPage(
-            strategyId: state.pathParameters['id'] ?? '',
-            strategyName: extra?['strategyName'] as String? ?? '',
+          return PersistentNavigationPage(
+            sectionIndex: 3,
+            child: BacktestConfigPage(
+              strategyId: state.pathParameters['id'] ?? '',
+              strategyName: extra?['strategyName'] as String? ?? '',
+              initialStockCode: extra?['stockCode'] as String?,
+              initialStockName: extra?['stockName'] as String?,
+              initialMarket: extra?['market'] as String?,
+              initialStrategyVersionId: extra?['strategyVersionId'] as String?,
+            ),
           );
         },
+      ),
+      GoRoute(
+        path: '/strategy/:id/versions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PersistentNavigationPage(
+          sectionIndex: 3,
+          child: StrategyVersionHistoryPage(
+            strategyId: state.pathParameters['id'] ?? '',
+          ),
+        ),
       ),
       GoRoute(
         path: '/strategy/:id/tuner',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return StrategyTunerPage(
-            strategyId: state.pathParameters['id'] ?? '',
-            stockCode: extra?['stockCode'] as String? ?? '',
+          return PersistentNavigationPage(
+            sectionIndex: 3,
+            child: StrategyTunerPage(
+              strategyId: state.pathParameters['id'] ?? '',
+              stockCode: extra?['stockCode'] as String? ?? '',
+            ),
           );
         },
       ),
@@ -164,13 +265,25 @@ class AppRouter {
         path: '/strategy/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          return StrategyDetailPage(
-            strategyId: state.pathParameters['id'] ?? '',
+          return PersistentNavigationPage(
+            sectionIndex: 3,
+            child: StrategyDetailPage(
+              strategyId: state.pathParameters['id'] ?? '',
+            ),
           );
         },
       ),
     ],
   );
+
+  static HotspotStockMode _hotspotMode(Object? value) {
+    if (value is String) {
+      for (final mode in HotspotStockMode.values) {
+        if (mode.name == value) return mode;
+      }
+    }
+    return HotspotStockMode.leader;
+  }
 }
 
 /// Main scaffold with bottom tab bar.
@@ -181,9 +294,10 @@ class _MainScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppNavigation.lastSectionIndex = navigationShell.currentIndex;
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: AppBottomNavigationBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) {
           if (index == navigationShell.currentIndex) {
@@ -199,25 +313,11 @@ class _MainScaffold extends StatelessWidget {
             }
             return;
           }
-          navigationShell.goBranch(index);
+          navigationShell.goBranch(index, initialLocation: index == 0);
+          if (index == 0) {
+            _recommendationHomeRequest.value++;
+          }
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up_outlined, size: 24),
-            activeIcon: Icon(Icons.trending_up, size: 24),
-            label: '推荐',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star_outline, size: 24),
-            activeIcon: Icon(Icons.star, size: 24),
-            label: '关注',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.lightbulb_outline, size: 24),
-            activeIcon: Icon(Icons.lightbulb, size: 24),
-            label: '策略',
-          ),
-        ],
       ),
     );
   }
@@ -238,6 +338,7 @@ class _StockPilotAppState extends ConsumerState<StockPilotApp>
   Timer? _foregroundAlertTimer;
   Timer? _startupAlertTimer;
   StreamSubscription<String>? _notificationTapSub;
+  StreamSubscription<void>? _appUpdateSub;
 
   @override
   void initState() {
@@ -266,14 +367,22 @@ class _StockPilotAppState extends ConsumerState<StockPilotApp>
 
     // Hot-tap notifications: route the payload to the right screen as the
     // user taps while the app is running.
-    _notificationTapSub =
-        NotificationService.instance.onTapPayload.listen(_routeFromPayload);
+    _notificationTapSub = NotificationService.instance.onTapPayload.listen(
+      _routeFromPayload,
+    );
     // Cold-start tap: consume the launch payload once the router is mounted
     // (post-frame so GoRouter has a context to navigate with).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final payload = NotificationService.instance.consumeLaunchPayload();
       if (payload != null) _routeFromPayload(payload);
     });
+
+    _appUpdateSub = ref.read(appPlatformServiceProvider).updates.listen((_) {
+      _showUpdatePrompt();
+    });
+    if (widget.disclaimerAccepted) {
+      Future<void>.delayed(const Duration(seconds: 3), _maybeShowInstallGuide);
+    }
   }
 
   @override
@@ -281,6 +390,7 @@ class _StockPilotAppState extends ConsumerState<StockPilotApp>
     _foregroundAlertTimer?.cancel();
     _startupAlertTimer?.cancel();
     _notificationTapSub?.cancel();
+    _appUpdateSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -322,6 +432,56 @@ class _StockPilotAppState extends ConsumerState<StockPilotApp>
   void _runAlertScan() {
     // Fire and forget; AlertScheduler swallows per-stock errors and logs them.
     ref.read(alertSchedulerProvider).runScan();
+  }
+
+  Future<void> _maybeShowInstallGuide() async {
+    if (!mounted) return;
+    final platform = ref.read(appPlatformServiceProvider);
+    if (!platform.supportsPwa ||
+        platform.isStandalone ||
+        !platform.isIosSafari) {
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('pwa_install_guide_seen') ?? false) return;
+    await prefs.setBool('pwa_install_guide_seen', true);
+    final context = _rootNavigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('安装到 iPhone', style: AppTextStyles.h2),
+              SizedBox(height: 12),
+              Text('点击 Safari 底部的“分享”，然后选择“添加到主屏幕”。'),
+              SizedBox(height: 8),
+              Text('安装后可从主屏幕独立启动，更新时无需重新安装。'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showUpdatePrompt() {
+    final context = _rootNavigatorKey.currentContext;
+    if (context == null || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('发现新版本，重新加载后生效'),
+        duration: const Duration(days: 1),
+        action: SnackBarAction(
+          label: '立即更新',
+          onPressed: ref.read(appPlatformServiceProvider).applyUpdate,
+        ),
+      ),
+    );
   }
 
   @override

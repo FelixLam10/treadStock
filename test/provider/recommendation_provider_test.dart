@@ -11,13 +11,25 @@ import 'package:stockpilot/features/strategy/data/strategy_service.dart';
 import 'package:stockpilot/features/strategy/domain/strategy_scoring_service.dart';
 import 'package:stockpilot/features/strategy/presentation/strategy_recommendation_provider.dart';
 
-class CountingStockApiService extends StockApiService {
+class CountingStockApiService extends StockApiService
+    implements RecommendationCacheMetadata {
   int klineCalls = 0;
+  String? lastRecommendationMarket;
+  bool returnEmptyCandidates = false;
+  bool throwOnCandidates = false;
+  @override
+  bool lastRecommendationCandidatesWereCached = false;
+  @override
+  DateTime? lastRecommendationCandidatesUpdatedAt;
 
   @override
   Future<List<StockQuote>> fetchRecommendationCandidates({
     int limit = 50,
+    String market = StockMarket.aShare,
   }) async {
+    lastRecommendationMarket = market;
+    if (throwOnCandidates) throw Exception('test failure');
+    if (returnEmptyCandidates) return [];
     return List.generate(30, (i) {
       final code = (600000 + i).toString();
       return StockQuote(
@@ -139,6 +151,99 @@ void main() {
       expect(notifier.state.groups, isNotEmpty);
       expect(notifier.state.groups.first.isFallbackCandidates, true);
       expect(notifier.state.groups.first.recommendations, isNotEmpty);
+
+      notifier.dispose();
+      await db.close();
+    });
+
+    test('切换推荐市场时传递对应市场参数', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final strategyService = StrategyService(db: db);
+      final api = CountingStockApiService();
+      final notifier = StrategyRecommendationNotifier(
+        strategyService,
+        api,
+        StrategyScoringService(AnalysisEngine()),
+      );
+
+      await notifier.loadRecommendations(market: RecommendationMarket.us);
+
+      expect(notifier.state.selectedMarket, RecommendationMarket.us);
+      expect(api.lastRecommendationMarket, StockMarket.us);
+
+      notifier.dispose();
+      await db.close();
+    });
+
+    test('行情返回空时保留当前市场最近一次有效结果', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final strategyService = StrategyService(db: db);
+      final api = CountingStockApiService();
+      final notifier = StrategyRecommendationNotifier(
+        strategyService,
+        api,
+        StrategyScoringService(AnalysisEngine()),
+      );
+
+      await notifier.loadRecommendations(market: RecommendationMarket.us);
+      final previousGroups = notifier.state.groups;
+      final previousUpdatedAt = notifier.state.lastUpdated;
+      api.returnEmptyCandidates = true;
+
+      await notifier.loadRecommendations(market: RecommendationMarket.us);
+
+      expect(notifier.state.isEmptyData, true);
+      expect(notifier.state.groups, same(previousGroups));
+      expect(notifier.state.lastUpdated, previousUpdatedAt);
+      expect(notifier.state.selectedMarket, RecommendationMarket.us);
+
+      notifier.dispose();
+      await db.close();
+    });
+
+    test('市场快照相互隔离，不会用 A 股结果充当美股缓存', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final strategyService = StrategyService(db: db);
+      final api = CountingStockApiService();
+      final notifier = StrategyRecommendationNotifier(
+        strategyService,
+        api,
+        StrategyScoringService(AnalysisEngine()),
+      );
+
+      await notifier.loadRecommendations(market: RecommendationMarket.aShare);
+      expect(notifier.state.groups, isNotEmpty);
+      api.returnEmptyCandidates = true;
+
+      await notifier.loadRecommendations(market: RecommendationMarket.us);
+
+      expect(notifier.state.isEmptyData, true);
+      expect(notifier.state.groups, isEmpty);
+      expect(notifier.state.lastUpdated, equals(null));
+      expect(notifier.state.selectedMarket, RecommendationMarket.us);
+
+      notifier.dispose();
+      await db.close();
+    });
+
+    test('候选行情来自持久化缓存时保留原始更新时间', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final strategyService = StrategyService(db: db);
+      final cachedAt = DateTime(2026, 10, 7, 15, 30);
+      final api = CountingStockApiService()
+        ..lastRecommendationCandidatesWereCached = true
+        ..lastRecommendationCandidatesUpdatedAt = cachedAt;
+      final notifier = StrategyRecommendationNotifier(
+        strategyService,
+        api,
+        StrategyScoringService(AnalysisEngine()),
+      );
+
+      await notifier.loadRecommendations(market: RecommendationMarket.us);
+
+      expect(notifier.state.isStaleData, true);
+      expect(notifier.state.lastUpdated, cachedAt);
+      expect(notifier.state.errorMessage, contains('缓存'));
 
       notifier.dispose();
       await db.close();

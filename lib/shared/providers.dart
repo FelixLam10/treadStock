@@ -12,6 +12,10 @@ import '../features/alert/data/notification_service.dart';
 import '../features/alert/data/alert_scheduler.dart';
 import '../features/alert/data/review_scheduler.dart';
 import '../features/settings/data/theme_prefs_service.dart';
+import '../features/settings/data/app_platform_service.dart';
+import '../features/hotspot/data/hotspot_service.dart';
+import '../features/hotspot/data/hotspot_scheme_repository.dart';
+import '../features/hotspot/domain/hotspot_ranking_engine.dart';
 
 /// Provider for the stock API service (singleton).
 final stockApiServiceProvider = Provider<StockApiService>((ref) {
@@ -97,6 +101,33 @@ final cachedStockApiServiceProvider = Provider<CachedStockApiService>((ref) {
   return CachedStockApiService(api: api, cache: cache);
 });
 
+final hotspotRankingEngineProvider = Provider<HotspotRankingEngine>((ref) {
+  return const HotspotRankingEngine();
+});
+
+final hotspotServiceProvider = Provider<HotspotService>((ref) {
+  final api = ref.watch(cachedStockApiServiceProvider);
+  return HotspotService(
+    source: IndustryAggregatedHotspotRemoteSource(
+      catalog: BaoStockIndustryCatalog(),
+      fetchQuotes: api.fetchHotspotMarketQuotes,
+      fetchKlines: (code, market) {
+        return api.fetchHotspotKlines(code, market: market, days: 6);
+      },
+    ),
+  );
+});
+
+final hotspotSchemeRepositoryProvider = Provider<HotspotSchemeRepository>((
+  ref,
+) {
+  return const HotspotSchemeRepository();
+});
+
+final appPlatformServiceProvider = Provider<AppPlatformService>((ref) {
+  return AppPlatformService();
+});
+
 // ── Theme ──────────────────────────────────────────────────────────
 
 /// Singleton provider for the theme-mode persistence service.
@@ -126,7 +157,8 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
 }
 
 /// App theme mode state. Watch this in MaterialApp's `themeMode`.
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((
+  ref,
+) {
   return ThemeModeNotifier(ref.watch(themePrefsServiceProvider));
 });

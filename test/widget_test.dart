@@ -27,6 +27,7 @@ class FakeStockApiService extends StockApiService {
   @override
   Future<List<StockQuote>> fetchRecommendationCandidates({
     int limit = 50,
+    String market = StockMarket.aShare,
   }) async => [];
 
   @override
@@ -68,9 +69,14 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({'onboarding_completed': true});
   });
-  testWidgets('StockPilot app renders without crash', (
+  testWidgets('StockPilot app fits a common iPhone viewport', (
     WidgetTester tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: testOverrides(),
@@ -78,8 +84,12 @@ void main() {
       ),
     );
     await tester.pump(const Duration(seconds: 3));
-    // Verify the app starts and shows the recommendation tab
+
     expect(find.text('推荐'), findsWidgets);
+    expect(find.text('热点'), findsOneWidget);
+    expect(find.text('关注'), findsOneWidget);
+    expect(find.text('策略'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('strategy knowledge page renders core learning content', (
@@ -166,6 +176,8 @@ void main() {
   testWidgets('recommendation flat list shows items and filter tabs', (
     WidgetTester tester,
   ) async {
+    final homeRequest = ValueNotifier<int>(0);
+    addTearDown(homeRequest.dispose);
     final now = DateTime(2026, 5, 18);
     final strategy = Strategy(
       id: 'strategy-1',
@@ -242,7 +254,7 @@ void main() {
             return _FakeDashboardNotifier();
           }),
         ],
-        child: const MaterialApp(home: RecommendationTab()),
+        child: MaterialApp(home: RecommendationTab(homeRequest: homeRequest)),
       ),
     );
 
@@ -254,6 +266,16 @@ void main() {
     // Both stocks appear in "全部" view
     expect(find.text('双环传动'), findsOneWidget);
     expect(find.text('贵州茅台'), findsOneWidget);
+    expect(find.text('策略信号热度'), findsOneWidget);
+    expect(find.byTooltip('当前参与推荐计算的策略数 / 策略库总数。停用策略不会参与筛选。'), findsOneWidget);
+    expect(
+      find.byTooltip('启用策略中已有有效 5 日复盘样本的策略命中率平均值；样本不足时显示 --。仅供复盘参考。'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('根据今日启用策略产生的推荐数量和高分信号数量估算。它反映策略信号活跃度，不代表全市场涨跌情况，仅供观察。'),
+      findsOneWidget,
+    );
 
     // Filter tabs exist. Note: "波段低位" may also appear as a band-low tag
     // on the matched item, so we assert at least one match for the chip.
@@ -264,15 +286,23 @@ void main() {
     // Tap the filter chip specifically (the band-low tag on the item shares
     // the same label text, so scope the finder to the GestureDetector chip).
     await tester.tap(
-      find.ancestor(
-        of: find.text('波段低位'),
-        matching: find.byType(GestureDetector),
-      ).first,
+      find
+          .ancestor(
+            of: find.text('波段低位'),
+            matching: find.byType(GestureDetector),
+          )
+          .first,
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('双环传动'), findsOneWidget);
     expect(find.text('贵州茅台'), findsNothing);
+
+    // Returning from another bottom tab resets recommendation to its home view.
+    homeRequest.value++;
+    await tester.pump();
+    expect(find.text('双环传动'), findsOneWidget);
+    expect(find.text('贵州茅台'), findsOneWidget);
 
     // Switch back to 全部
     await tester.tap(find.text('全部').first);
@@ -303,7 +333,7 @@ class _FakeStrategyRecommendationNotifier
   final AppDatabase _db;
 
   @override
-  Future<void> loadRecommendations() async {
+  Future<void> loadRecommendations({RecommendationMarket? market}) async {
     // No-op in tests; state is set directly in constructor
   }
 
@@ -319,14 +349,14 @@ class _FakeStrategyRecommendationNotifier
 
 class _FakeDashboardNotifier extends DashboardNotifier {
   _FakeDashboardNotifier()
-      : super(
-          StrategyService(db: AppDatabase.forTesting(NativeDatabase.memory())),
-          WatchlistService(
-            db: AppDatabase.forTesting(NativeDatabase.memory()),
-            seedDefaults: false,
-          ),
-          autoLoad: false,
-        );
+    : super(
+        StrategyService(db: AppDatabase.forTesting(NativeDatabase.memory())),
+        WatchlistService(
+          db: AppDatabase.forTesting(NativeDatabase.memory()),
+          seedDefaults: false,
+        ),
+        autoLoad: false,
+      );
 }
 
 class _FakeStrategyDetailNotifier extends StrategyDetailNotifier {
