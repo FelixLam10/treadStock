@@ -44,6 +44,7 @@
 | push2his.eastmoney.com/api/qt/stock/kline/get | 个股K线 | 无（公开） | 建议 < 30次/分钟 | 公开 |
 | searchapi.eastmoney.com/api/suggest/get | 股票搜索 | 无（公开） | 建议 < 20次/分钟 | 公开 |
 | search-api-web.eastmoney.com/search/jsonp | 新闻搜索 | 无（公开） | 建议 < 10次/分钟 | 公开 |
+| emweb.securities.eastmoney.com/PC_HSF10/* | A股公司与财务摘要 | 无（公开） | 建议 < 10次/分钟 | 公开 |
 | hq.sinajs.cn/list | 新浪行情（备选） | 无（公开） | 建议 < 10次/分钟 | 公开 |
 | sentry.io | 崩溃上报 | DSN Token | 免费 5k/月 | 内部 |
 

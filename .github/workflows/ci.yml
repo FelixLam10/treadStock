@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  FLUTTER_VERSION: '3.22.0'
+  FLUTTER_VERSION: '3.41.5'
 
 jobs:
   # ============================================================
@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -44,9 +46,18 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Unit & Widget tests
-        run: flutter test --coverage
+        run: flutter test --coverage test/unit test/provider test/widget test/widget_test.dart
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Setup Node.js for market proxy tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Market proxy tests
+        working-directory: deploy/market-proxy
+        run: node --test test/*.test.js
 
       - name: Upload coverage to Codecov
         if: always()
@@ -61,8 +72,8 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event.pull_request.head.sha || github.sha }}
           # only-verified: true  # 禁用，因为 MVP 阶段 .env.example 可能触发误报
 
   # ============================================================

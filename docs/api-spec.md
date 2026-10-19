@@ -1,17 +1,17 @@
 # API 规范 -- 股势 TrendStock 外部数据源接口 v1.0
 
-版本：v1.0 | 日期：2026-04-10 | 架构：纯 Flutter 客户端（无自有后端）
+版本：v1.1 | 日期：2026-10-19 | 架构：Flutter 客户端（Web 可选无状态行情代理）
 
 ---
 
 ## 说明
 
-股势 TrendStock 为纯客户端架构，所有数据通过客户端直接调用公开金融 API 获取。
+股势 TrendStock 的策略、关注和分析数据保存在本机。原生端直接调用公开金融 API；Web/PWA 可通过无状态行情代理访问固定白名单接口，解决浏览器跨域限制。无账号、用户数据库或云同步。
 本规范定义了客户端调用的外部 API 接口契约，以及 Dart 本地 Service 层的接口定义。
 
 ### Authentication / Permission / Auth Requirements
 
-所有外部 API 均为公开接口，**无需认证**。客户端直接发送 HTTP GET 请求即可获取数据。
+所有外部 API 均为公开接口，**无需认证**。原生客户端直接发送 HTTP GET 请求；Web 可通过配置的行情代理转发。
 - 无 API Key / Token（东方财富搜索接口使用固定公开 Token）
 - 无用户认证体系（纯客户端，无后端，no authentication required）
 - 请求头携带标准 User-Agent 和 Referer（模拟浏览器访问，避免被拒绝）
@@ -37,8 +37,12 @@
 | GET | `https://push2.eastmoney.com/api/qt/clist/get` | 东方财富 | 全市场实时行情快照 | 无（公开接口） | IP 级别，实测约 10次/秒 |
 | GET | `https://push2his.eastmoney.com/api/qt/stock/kline/get` | 东方财富 | 个股日K线数据 | 无 | IP 级别 |
 | GET | `https://searchapi.eastmoney.com/api/suggest/get` | 东方财富 | 股票搜索（代码/名称） | 无 | IP 级别 |
-| GET | `https://push2.eastmoney.com/api/qt/slist/get` | 东方财富 | 板块行情 | 无 | IP 级别 |
+| GET | `https://emweb.securities.eastmoney.com/PC_HSF10/CompanySurvey/PageAjax` | 东方财富 | A股公司概况、行业与主营业务 | 无 | IP 级别 |
+| GET | `https://emweb.securities.eastmoney.com/PC_HSF10/NewFinanceAnalysis/ZYZBAjaxNew` | 东方财富 | A股最新财务摘要 | 无 | IP 级别 |
 | GET | `https://finance.sina.com.cn/realstock/company/{code}/nc.shtml` | 新浪财经 | 备用行情数据源 | 无 | IP 级别 |
+| GET | `https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.*` | 新浪财经 | 热点模块沪深 A 股全量分页行情 | 无 | IP 级别，客户端并发限制为 6 |
+| GET | `https://quotes.sina.cn/cn/api/jsonp_v2.php/.../CN_MarketDataService.getKLineData` | 新浪财经 | 热点候选股短周期日 K | 无 | IP 级别，业务并发限制为 4 |
+| 本地资产 | `assets/data/baostock_industries.json` | BaoStock | 热点模块 A 股行业归属周快照 | 无 | 构建前更新，不在客户端运行时请求 |
 
 ## 统一错误处理
 
@@ -113,6 +117,24 @@ GET https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=5000&po=1&np=1&fltt=2&i
 **成功响应**：200 `{ data: { total: 5000, diff: [...] } }`
 
 **缓存策略**：写入 SQLite `daily_quote_cache` 表，交易日内 5 分钟过期。
+
+### 1.1 行业热点与成分股
+
+该链路仅供新增热点模块使用，不替换推荐、搜索、个股详情和其他既有功能的数据源。
+
+1. `assets/data/baostock_industries.json` 提供股票代码到证监会行业的本地关系快照。
+2. 客户端分别读取新浪 `sh_a`、`sz_a` 节点总数并按每页 100 只拉取完整行情，单批最多并发 6 页。
+3. 本地按行业聚合成交额、成交量，并用成交额加权计算涨跌幅、振幅、换手率和可用量比。
+4. 行情与行业关系至少成功匹配 1,000 只股票才生成榜单，避免用残缺分页制造失真排名。
+5. 用户选择行业后，直接从同一份全量快照取出成分股；近 5 日强度和量比缺口通过热点专用新浪 K 线入口补齐，业务并发限制为 4，并复用现有 K 线缓存。
+
+板块列表按页面选择的成交额、成交量、换手率、涨跌幅或量能异动在本地稳定排序。SharedPreferences 保存最近一次有效板块和成分股快照，最长保留 7 天；刷新失败时显示原更新时间和缓存提示。空成分股、无筛选命中与真实请求失败是三个独立状态。
+
+自定义热点筛选方案同样仅保存在本机 SharedPreferences。方案包含目标榜单、基础排除、价格范围、AND 或组间 OR 条件、排序指标/权重/方向、返回数量、启用状态、版本及最近运行元数据；每次规则保存形成递增版本快照，单方案最多保留 30 条。当前执行范围仅为用户已选板块的成分股，不会额外请求全市场或关注列表行情；策略匹配、上市天数和市值指标尚未接入。
+
+BaoStock 快照由 `tool/update_baostock_industries.py` 生成，建议每周或发版前更新并审核变更。客户端不依赖 BaoStock Python 包，也不需要用户拥有券商账户。
+
+概念板块尚无稳定来源，当前明确返回“概念板块暂未接入稳定数据源”，不能用行业分类替代。东方财富板块和成分股接口在当前验证网络持续返回 HTTP 502；行业热点已通过上述备用链路规避，概念板块仍按 [KI-DATA-001](known-issues.md#ki-data-001东方财富板块及成分股数据源不可用) 跟踪。
 
 ---
 
@@ -269,6 +291,16 @@ Future<List<StockNews>> fetchStockNews(String stockCode, {int page = 1, int page
 - **缓存**: 无独立 news_cache 表；每次进入详情页实时拉取，失败返回空列表
 
 > 注：早期文档描述的 `NewsService` 抽象与 `news_cache` SQLite 表**未实现**，已从此文档移除。
+
+### 公司基本面 -- fetchStockFundamentals
+
+详情页通过 `StockApiService.fetchStockFundamentals` 并行读取三个公开数据源，任一来源失败时保留其他可用字段：
+
+- `CompanySurvey/PageAjax`：上市板块、行业分类、公司简介、主营业务和公司自述定位。
+- `NewFinanceAnalysis/ZYZBAjaxNew`：最新报告期营收、归母净利、同比增速、毛利率、ROE、负债率和 EPS。
+- `stock/get`：动态市盈率、市净率和总市值。
+
+当前 F10 公司资料仅用于 A 股；港股和美股显示数据能力说明。详情页的“当前阶段”由 MA20/MA60 规则生成，“增长空间”仅概括最新财报同比表现，不作为收益预测。
 
 ---
 

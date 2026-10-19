@@ -17,12 +17,14 @@ on:
         default: ''
 
 env:
-  FLUTTER_VERSION: '3.22.0'
+  FLUTTER_VERSION: '3.41.5'
 
 jobs:
   build:
     runs-on: macos-14
     timeout-minutes: 60
+    env:
+      HAS_IOS_SIGNING_KEY: ${{ secrets.IOS_SIGNING_KEY_BASE64 != '' }}
 
     steps:
       - name: Checkout
@@ -85,7 +87,7 @@ jobs:
       # Build iOS for App Store (if signing key available)
       # ----------------------------------------
       - name: Build iOS — App Store (Archive)
-        if: secrets.IOS_SIGNING_KEY_BASE64 != ''
+        if: env.HAS_IOS_SIGNING_KEY == 'true'
         run: |
           flutter build ios --release
           # Package into xcarchive
@@ -103,7 +105,7 @@ jobs:
       # Export IPA from xcarchive
       # ----------------------------------------
       - name: Export IPA
-        if: secrets.IOS_SIGNING_KEY_BASE64 != ''
+        if: env.HAS_IOS_SIGNING_KEY == 'true'
         run: |
           xcodebuild -exportArchive \
             -archivePath build/ios/Runner.xcarchive \
@@ -124,7 +126,7 @@ jobs:
           retention-days: 7
 
       - name: Upload IPA (if available)
-        if: secrets.IOS_SIGNING_KEY_BASE64 != ''
+        if: env.HAS_IOS_SIGNING_KEY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: stockpilot-ios-ipa-v${{ github.event.inputs.version_name || vars.IOS_VERSION_NAME || '1.0.0' }}-b${{ github.run_number }}

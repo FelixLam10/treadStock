@@ -1,7 +1,7 @@
 name: stockpilot
 description: "股势 TrendStock - Flutter stock trading decision assistant app"
 publish_to: 'none'
-version: 0.1.6+8
+version: 0.1.7+9
 
 environment:
   sdk: ^3.11.3
@@ -96,7 +96,7 @@ msix_config:
   publisher_display_name: StockPilot
   identity_name: Hank-tku.StockPilot
   publisher: CN=StockPilot
-  msix_version: 0.1.3.0
+  msix_version: 0.1.7.0
   architecture: x64
   capabilities: internetClient
   logo_path: windows/runner/resources/app_icon.ico

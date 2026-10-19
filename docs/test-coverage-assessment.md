@@ -1,227 +1,125 @@
-# Test Coverage Assessment Report
+# 测试覆盖率评估 — 股势 TrendStock
 
-**Date:** 2026-06-09  
-**Project:** StockPilot / 股势 TrendStock  
-**Source files:** 60 (excl. .g.dart) / **~15,271 lines**  
-**Test files:** 25 / **372 tests** (all passing)  
-**Line coverage:** **43.4%** (3,337 / 7,688 lines)
+评估日期：2026-10-09
+
+口径：`flutter test --coverage`，排除 `*.g.dart` 生成代码
 
 ---
 
-## 1. Coverage Overview by Module
+## 1. 当前快照
 
-| Module | Coverage | Lines Hit/Total | Verdict |
-|---|---|---|---|
-| analysis/domain | **98.0%** | 384/392 | Excellent |
-| strategy/domain | **89.7%** | 687/766 | Strong |
-| watchlist/data | **88.4%** | 99/112 | Strong |
-| shared/utils | **97.4%** | 37/38 | Excellent |
-| shared/widgets | **75.4%** | 144/191 | Good |
-| watchlist/presentation | **78.1%** | 217/278 | Good |
-| stock/domain | **82.7%** | 86/104 | Good |
-| recommendation/presentation | **54.5%** | 109/200 | Needs work |
-| shared/providers | **55.6%** | 15/27 | Needs work |
-| strategy/data | **40.5%** | 1,056/2,606 | Weak (inflated by .g.dart) |
-| strategy/presentation | **14.0%** | 279/1,986 | Critical gap |
-| stock/data | **28.9%** | 144/499 | Weak |
-| stock/presentation | **0.0%** | 0/253 | Untested |
+| 指标 | 当前值 |
+|---|---:|
+| 非生成 Dart 源文件 | 129 |
+| 测试文件 | 54 |
+| 自动化测试 | 530 项，全部通过 |
+| 行覆盖率 | 54.1% |
+| 已覆盖行 / 有效行 | 7,356 / 13,590 |
 
----
+相较第六阶段，覆盖率由 53.4% 提升至 54.1%。本轮新增候选版本五类差异、相反规则冲突、阻塞项拦截、事务化正式启用和版本页保护。新增领域差异文件覆盖率为 83.8%，版本历史页为 70.7%。总体覆盖率仍受策略其他大型页面、行情底层和告警能力低覆盖影响。
 
-## 2. Critical Coverage Gaps (Priority Order)
+## 2. 模块覆盖率
 
-### P0 — Core Business Logic with < 50% Coverage
+| 模块 | 已覆盖 / 有效行 | 覆盖率 | 评估 |
+|---|---:|---:|---|
+| `features/watchlist/data` | 158 / 175 | 90.3% | 良好 |
+| `features/hotspot/data` | 306 / 325 | 94.2% | 良好，行业聚合、缓存与方案持久化均已覆盖 |
+| `features/hotspot/domain` | 412 / 448 | 92.0% | 良好，默认与自定义规则重点覆盖 |
+| `features/hotspot/presentation` | 513 / 890 | 57.6% | 中等，核心状态、概念禁用提示与页面骨架已覆盖 |
+| `features/analysis/domain` | 531 / 618 | 85.9% | 良好 |
+| `features/stock/domain` | 259 / 305 | 84.9% | 良好 |
+| `features/strategy/domain` | 1,500 / 1,865 | 80.4% | 良好，版本差异 83.8%、回测引擎 96.1% |
+| `features/strategy/data` | 804 / 1,020 | 78.8% | 较好，版本启用与 v1/v4/v5 迁移已有测试 |
+| `features/recommendation/presentation` | 234 / 327 | 71.6% | 较好 |
+| `features/watchlist/presentation` | 233 / 339 | 68.7% | 中等 |
+| `shared/providers.dart` | 33 / 59 | 55.9% | 中等 |
+| `shared/widgets` | 282 / 671 | 42.0% | 偏低 |
+| `features/stock/presentation` | 315 / 833 | 37.8% | 有提升，但仍是高风险缺口 |
+| `features/stock/data` | 188 / 633 | 29.7% | 高风险缺口；热点聚合有保护，HTTP 传输分支仍偏低 |
+| `features/strategy/presentation` | 1,313 / 4,182 | 31.4% | 版本历史页保护较好，其他大型页面仍是主覆盖缺口 |
+| `features/alert/data` | 10 / 174 | 5.7% | 高风险缺口 |
+| `features/onboarding/presentation` | 2 / 195 | 1.0% | 低覆盖，需保证免责声明流程 |
 
-| File | Lines | Coverage | Risk |
-|---|---|---|---|
-| `stock/data/stock_api_service.dart` | 487 | **3.2%** | All API parsing, pagination, fallback logic untested. 13 public methods including `fetchAllMarketQuotes`, `fetchStockKline`, `searchStock`, `fetchStockNews` — none tested directly. |
-| `strategy/presentation/strategy_recommendation_provider.dart` | 239 | **23.0%** | Scoring facade used by recommendation tab. Only `scoreAll`/`bestScore` tested; `StrategyScoreResult` display methods (`displayReason`, `learningHint`, `nextObservation`) untested. |
-| `strategy/domain/strategy_scoring_service.dart` | 51 | **37.3%** (domain only) | Only 1 test for `scoreAll`+`bestScore`. Missing: empty strategies, single strategy, `scoreStock` individual, `StrategyScoreResult` edge cases (bandLow, high scores). |
-| `recommendation/presentation/recommendation_provider.dart` | 60 | **16.7%** | State initialization and copyWith tested, but `RecommendationNotifier` business logic (refresh, grouping, caching) not covered. |
-| `strategy/presentation/strategy_detail_provider.dart` | 45 | **17.8%** | State class partially tested, `StrategyDetailNotifier` load/error paths untested. |
+## 3. 本次改动相关文件
 
-### P1 — UI/Presentation Layer (0–30% Coverage)
+| 文件 | 已覆盖 / 有效行 | 覆盖率 | 说明 |
+|---|---:|---:|---|
+| `watchlist_provider.dart` | 90 / 121 | 74.4% | 新增关注/取消关注双向切换测试 |
+| `recommendation_tab.dart` | 233 / 325 | 71.7% | 三个指标说明气泡已有 Widget 保护 |
+| `watchlist_tab.dart` | 143 / 218 | 65.6% | Provider 已覆盖核心切换，页面撤销交互仍需手工验证 |
+| `stock_detail_page.dart` | 105 / 609 | 17.2% | 文件随详情能力扩展，策略分析错误与多策略分支仍需补充 |
+| `strategy_knowledge_package.dart` | 253 / 291 | 86.9% | 已覆盖版本前驱、可执行规则映射与缺失映射拒绝 |
+| `strategy_version_diff.dart` | 119 / 142 | 83.8% | 五类差异与相反规则冲突均有纯领域测试 |
+| `strategy_service.dart` | 754 / 851 | 88.6% | 导入、版本、事务化启用及回测报告持久化已覆盖 |
+| `database.dart` | 50 / 54 | 92.6% | schema v1、v4、v5 到 v6 路径已覆盖 |
+| `strategy_import_page.dart` | 164 / 229 | 71.6% | 预览流程已覆盖，保存后的路由仍以服务测试为主 |
+| `rule_engine.dart` | 169 / 183 | 92.3% | 多日确认、环境过滤和进度状态覆盖良好 |
+| `signal_rule.dart` | 55 / 57 | 96.5% | 新参数、校验与 JSON 往返覆盖良好 |
+| `backtest_engine.dart` | 124 / 129 | 96.1% | 入场退出已复用统一规则入口 |
+| `strategy_analysis_state.dart` | 13 / 13 | 100.0% | 关键产品状态均有确定性测试 |
+| `signal_card_widget.dart` | 49 / 193 | 25.4% | 首个状态卡测试已建立，交互和多分支仍需补充 |
+| `backtest_models.dart` | 142 / 190 | 74.7% | 配置、序列化、指纹、样本状态和比较保护已覆盖 |
+| `backtest_provider.dart` | 46 / 59 | 78.0% | 版本选择、保存和自动比较主链路已覆盖 |
+| `backtest_config_page.dart` | 152 / 216 | 70.4% | 指定版本、活跃版本回退与个股带入已覆盖 |
+| `strategy_version_history_page.dart` | 128 / 181 | 70.7% | 差异摘要、阻塞状态与指定版本回测入口已覆盖 |
+| `backtest_result_page.dart` | 169 / 233 | 72.5% | 证据快照、样本状态和版本比较已覆盖 |
+| `hotspot_filter_scheme.dart` | 147 / 164 | 89.6% | 默认、草稿、校验、JSON 和版本字段已覆盖 |
+| `hotspot_ranking_engine.dart` | 185 / 201 | 92.0% | 默认/自定义过滤、分组、缺失值、权重方向、百分位和稳定排序已覆盖 |
+| `hotspot_service.dart` | 210 / 225 | 93.3% | 行业快照、聚合、历史补数、缓存过期和失败回退已覆盖 |
+| `hotspot_scheme_repository.dart` | 96 / 100 | 96.0% | 保存、启停、复制、恢复、删除、运行记录与版本历史已覆盖 |
+| `hotspot_provider.dart` | 78 / 157 | 49.7% | 自动选择、自定义方案切换、无匹配和真实错误已覆盖 |
+| `hotspot_scheme_edit_page.dart` | 176 / 279 | 63.1% | 表单骨架、范围与启用边界已覆盖，逐项编辑交互仍需补充 |
+| `hotspot_scheme_manage_page.dart` | 65 / 145 | 44.8% | 列表和状态已覆盖，菜单操作分支仍需补充 |
+| `hotspot_tab.dart` | 189 / 306 | 61.8% | 双榜、方案选择与关键空态已覆盖 |
 
-These are the largest untested surface areas. Widget tests are lower priority than unit tests but still matter for refactoring safety:
+详情页测试已经消除“完全无测试”的状态，但 20.0% 仍不足以保护加载、错误、新闻、策略分析、关注与预警失败等分支。
 
-| File | Lines | Coverage |
+## 4. 关键风险缺口
+
+### P0：数据与领域正确性
+
+1. `stock_api_service.dart` 的通用行情分页、备用数据源和网络失败覆盖不足。热点行业聚合与覆盖阈值已有注入式测试，新浪全量 HTTP 分页、限频和上游字段变化仍需可注入传输层测试。
+2. 策略导入、来源追溯、不可变版本、候选版本治理、多日规则和版本化回测首版已实现；语义性冲突仍依赖外部 Agent 转换为结构化规则或待确认项。
+3. 多日确认已达到高覆盖，但趋势环境首版只基于个股短期均线；指数/全市场环境和更复杂横盘识别尚无数据与测试。
+4. 龙头/热点默认与当前板块自定义排名已实现并有纯领域保护；上市不足 60 日、市值和策略匹配因数据或编排尚未接入。
+
+### P1：状态管理与页面分支
+
+1. `strategy/presentation` 体量最大且覆盖率为 31.4%，编辑、详情、调参、模板和策略比较页面仍有大量未测状态。
+2. 个股详情已有吸顶栏和策略状态的领域/卡片测试，但页面级加载、空 K 线、服务失败及多策略混合状态仍未覆盖。
+3. 关注搜索页面的“取消后撤销”尚未做 Widget 行为测试；目前由 Provider 测试和手工验收共同兜底。
+4. 首次启动免责声明属于金融合规关键路径，虽然业务变化较少，仍应有至少一个稳定的接受/拒绝流程测试。
+5. 真实东方财富板块及成分股接口持续返回 HTTP 502；行业热点已通过 BaoStock + 新浪备用链路完成真实验证，但概念板块仍受 `KI-DATA-001` 影响。
+6. 自定义筛选仅覆盖所选板块；全市场和关注列表需要新的行情批量编排与性能测试。
+
+### P2：测试基础设施
+
+1. 多个测试重复创建 K 线样本，应抽取共享生成器，减少边界数据不一致。
+2. 内存数据库注入方式不完全统一，产生 Drift 多实例调试提示。
+3. 测试命名存在中英文和 ID 粒度不一致；新增 2.1 用例统一使用 `T-Fxxx-x` 加中文场景名。
+
+## 5. 建议补测顺序
+
+| 优先级 | 工作项 | 预期价值 |
 |---|---|---|
-| `stock/presentation/stock_detail_page.dart` | 634 | 0.0% |
-| `strategy/presentation/strategy_edit_page.dart` | 846 | 0.3% |
-| `strategy/presentation/strategy_tuner_page.dart` | 463 | 0.0% |
-| `strategy/presentation/backtest_result_page.dart` | 330 | 0.0% |
-| `strategy/presentation/backtest_config_page.dart` | 337 | 0.0% |
-| `strategy/presentation/strategy_compare_page.dart` | 544 | 0.5% |
-| `strategy/presentation/strategy_tab.dart` | 310 | 1.9% |
-| `strategy/presentation/strategy_template_page.dart` | 386 | 0.8% |
-| `strategy/presentation/widgets/signal_rule_edit_sheet.dart` | 243 | 0.0% |
+| P0 | 行情 API 解析、异常和缓存降级测试 | 降低推荐、详情和热点共同的数据风险 |
+| P1 | 回测历史列表、任意同输入报告选择和失败状态 | 完善版本验证闭环 |
+| P1 | 候选版本页更多加载/失败/确认分支 Widget 测试 | 继续保护版本演进页面边界 |
+| P1 | 自定义方案编辑/管理操作分支 Widget 测试 | 保护删除确认、历史弹窗、启停失败与保存反馈 |
+| P1 | 个股详情页面级加载失败、多策略状态及关注/预警失败测试 | 降低用户高频页面回归风险 |
+| P1 | 其他策略 Provider 与页面测试 | 覆盖加载、空态、失败和取消流程 |
+| P2 | 共享测试夹具、数据库测试工具整理 | 降低维护成本与测试噪声 |
 
-### P2 — Generated/Infrastructure Files (Acceptable Low Coverage)
+## 6. 阶段目标
 
-| File | Coverage | Notes |
-|---|---|---|
-| `strategy/data/database.g.dart` | 31.0% (643/2074) | Generated by Drift build_runner; acceptable |
-| `stock/data/kline_cache.g.dart` | 32.4% (78/241) | Generated; acceptable |
-| `watchlist/data/tables.dart` | 0.0% (0/12) | Drift table definitions; no runtime logic |
-| `strategy/data/tables.dart` | 0.0% (0/51) | Drift table definitions; no runtime logic |
+| 阶段 | 总体目标 | 关键模块目标 |
+|---|---:|---|
+| 策略导入与版本完成 | 不低于 50% | 新增领域/服务逻辑不低于 85% |
+| 多日规则首版完成 | 不低于 50% | 规则状态机和回测核心不低于 90% |
+| 版本化回测完成 | 不低于 55% | 快照、版本比较和复盘核心不低于 90% |
+| 热点页首版完成 | 不低于 60% | 筛选/排名领域逻辑不低于 90%，数据服务不低于 75% |
+| 热点自定义筛选首版 | 不低于 60% | 热点领域与数据层不低于 90% |
 
----
+第七阶段后，策略领域整体为 80.4%、策略数据层为 78.8%，新增版本差异和版本页分别为 83.8% 与 70.7%；总体覆盖率为 54.1%，仍未达到 60% 全局目标。差距主要来自其他大型策略页面、行情底层和告警模块，后续需按风险补测，不能通过低价值断言凑覆盖率。
 
-## 3. Test Quality Assessment
-
-### Strengths
-
-- **Good test organization:** Tests use `group()` consistently (93 groups across 25 files). Strategy_service_test.dart has 7 well-named groups.
-- **Realistic test data:** Custom kline generators (`generateKlines`, `generateDecliningKlines`, `_generateKlines`) provide deterministic, realistic market data.
-- **Issue tracking:** Groups tagged with T-IDs (T-SVC-01, T-ENG-01, etc.) linking to PRD/test plan.
-- **No mock framework dependency:** Uses hand-written fakes (e.g., `FakeStockApiService`) instead of mockito — simpler, less brittle.
-- **Edge cases in core engine:** analysis_engine_test.dart covers boundary conditions (insufficient data, flat prices, extreme drops, band low alignment).
-- **Integration test:** rule_strategy_integration_test.dart validates rule_engine + strategy models end-to-end.
-
-### Weaknesses
-
-1. **Insufficient test count for critical services:**
-   - `strategy_scoring_service_test.dart`: Only **1 test** for a 124-line scoring facade used by both recommendation and watchlist flows.
-   - `recommendation_provider_test.dart`: Only **3 tests** for the main recommendation state management.
-
-2. **No `verify()` / mock assertions:** Zero `verify()` calls found. Tests never assert that specific interactions occurred (e.g., "fetchStockKline was called once"). The `FakeStockApiService` pattern tracks call counts manually but only in `cached_stock_api_service_test.dart`.
-
-3. **Inconsistent test naming:**
-   - ~44% Chinese names, ~56% English names — mixed conventions.
-   - Issue IDs only appear in `group()` names and comments, not in individual `test()` names.
-   - No consistent `test_<feature>_<scenario>_<expected>` pattern.
-
-4. **Heavy reliance on real DB in service tests:** `strategy_service_test.dart` (867 lines, 29 tests) uses `AppDatabase.forTesting()` with real in-memory SQLite — correct approach, but the test-only helper `insertStrategy()` is shared and could mask ordering issues.
-
-5. **No negative/error path tests for API service:** `stock_api_service.dart` is the highest-risk gap. Network parsing errors, empty responses, malformed JSON — all untested.
-
-6. **Duplicated test helpers:** Kline generation helpers are duplicated across `analysis_engine_test.dart`, `backtest_engine_test.dart`, `strategy_scoring_service_test.dart`, and `strategy_tuner_test.dart` — should be in a shared test utility.
-
-7. **Low provider test coverage:** Only 2 provider test files (recommendation, watchlist) with 12 combined tests. Strategy presentation has 6+ providers with zero direct tests.
-
----
-
-## 4. Recommended New Test Cases
-
-### Phase 1: High-Impact Unit Tests (Est. +40% core coverage)
-
-#### A. stock_api_service_test.dart — API Parsing (NEW FILE)
-```
-test_fetchAllMarketQuotes_returnsParsedQuotes
-test_fetchAllMarketQuotes_emptyResponse_returnsEmptyList
-test_fetchAllMarketQuotes_pagination_works
-test_fetchAllMarketQuotes_fallsBackToSinaOnEastMoneyError
-test_fetchStockKline_parsesDailyKlineData
-test_fetchStockKline_handlesDifferentMarkets_SH_SZ
-test_fetchStockKline_emptyData_returnsEmptyList
-test_searchStock_returnsMatchingResults
-test_searchStock_noMatch_returnsEmptyList
-test_fetchStockQuote_returnsQuoteOrNull
-test_fetchStockNews_parsesJsonpResponse
-```
-**Approach:** Extract HTTP layer via constructor injection of `Dio`, pass a mock Dio with `http.MockAdapter` in tests. Parse from fixture JSON strings.
-
-#### B. strategy_scoring_service_test.dart — Expand (1 → 10 tests)
-```
-test_scoreStock_returnsCorrectScoreAndMatchStatus
-test_scoreStock_bandLowStrategy_setsIsMatchedCorrectly
-test_scoreAll_sortsByScoreDescending
-test_scoreAll_emptyStrategies_returnsEmptyList
-test_bestScore_emptyStrategies_returnsNull
-test_bestScore_singleStrategy_returnsThatStrategy
-test_bestScore_selectsHighestScoringStrategy
-test_scoreStock_customWeights_calculatesCorrectly
-test_displayReason_includesThresholdAndScore
-test_displayReason_bandLow_showsBandLowMessage
-test_learningHint_identifiesStrongestAndWeakest
-test_nextObservation_bandLow_suggestsObserveMA
-test_nextObservation_maStrong_suggestsTrendContinuity
-```
-
-#### C. recommendation_provider_test.dart — Expand (3 → 15 tests)
-```
-test_refresh_fetchesQuotesAndScores
-test_refresh_groupsByScore
-test_refresh_cachedQuotes_reusesCache
-test_refresh_networkError_showsError
-test_refresh_emptyMarket_returnsEmptyState
-test_toggleSortOrder_sortsCorrectly
-test_toggleSortOrder_byScoreDesc
-test_toggleSortOrder_byChangePctDesc
-```
-
-#### D. strategy_detail_provider_test.dart — Expand (0 → 12 tests)
-```
-test_loadStrategy_returnsStrategyAndStats
-test_loadStrategy_notFound_setsNotFoundError
-test_loadStrategy_statsFailed_setsStatsFailedError
-test_hasInsufficientSample_whenEvaluatedCountBelow20
-test_hasInsufficientSample_false_whenEnoughData
-```
-
-### Phase 2: Provider Tests (Est. +15% provider coverage)
-
-#### E. strategy_recommendation_provider_test.dart — NEW FILE
-```
-test_refresh_scoresAllStrategies
-test_refresh_sortsByBestScore
-test_refresh_emptyStrategies_returnsEmpty
-test_refresh_klineFetchFailure_skipsStock
-test_toggleGroupCollapse_togglesState
-```
-
-#### F. backtest_provider_test.dart — NEW FILE
-```
-test_runBacktest_returnsResult
-test_runBacktest_invalidConfig_returnsError
-test_clearResult_resetsState
-```
-
-#### G. strategy_list_provider_test.dart — NEW FILE
-```
-test_loadStrategies_returnsAllStrategies
-test_toggleEnabled_updatesStrategy
-test_deleteStrategy_removesFromList
-```
-
-### Phase 3: Widget Tests (Est. +10% overall coverage)
-
-These are lower priority but valuable for refactoring safety:
-
-- `stock_detail_page_test.dart`: Score summary rendering, MA display, alert toggle
-- `strategy_edit_page_test.dart`: Form validation, weight slider, signal rule add/remove
-- `strategy_tab_test.dart`: Tab switching, empty state, strategy list rendering
-- `backtest_config_page_test.dart`: Date range picker, strategy selector
-
-### Phase 4: Shared Utilities
-
-- Extract duplicated kline generators into `test/helpers/kline_generators.dart`
-- Extract `insertStrategy()` / `setUpDb()` / `tearDownDb()` into `test/helpers/test_database.dart`
-- Add `test_helpers/stock_fixtures.dart` for mock quote/kline data
-
----
-
-## 5. Summary Metrics
-
-| Metric | Current | Target (Phase 1+2) | Target (All Phases) |
-|---|---|---|---|
-| Line coverage | 43.4% | ~60% | ~70% |
-| Core logic coverage (analysis + strategy domain) | 93.8% | 93.8% | 93.8% |
-| Provider coverage | ~40% | ~65% | ~80% |
-| Service layer coverage | ~55% | ~80% | ~85% |
-| Presentation coverage | ~10% | ~10% | ~35% |
-| Test files | 25 | 35 | 40+ |
-| Total tests | 372 | ~500 | ~600+ |
-
----
-
-## 6. Action Items (Ordered by Priority)
-
-1. [P0] Create `test/unit/stock_api_service_test.dart` — inject Dio dependency, test parsing with fixture JSON
-2. [P0] Expand `test/unit/strategy_scoring_service_test.dart` — 1 → 10+ tests covering all public methods and `StrategyScoreResult` display logic
-3. [P0] Expand `test/provider/recommendation_provider_test.dart` — 3 → 15+ tests
-4. [P1] Create `test/provider/strategy_detail_provider_test.dart`
-5. [P1] Create `test/provider/strategy_recommendation_provider_test.dart`
-6. [P1] Extract shared test helpers to `test/helpers/`
-7. [P2] Widget tests for stock_detail_page, strategy_edit_page
-8. [P2] Standardize test naming convention (pick one: Chinese or English, apply consistently)
+覆盖率是风险信号，不是单独的发布结论。发布判断还需结合全量测试、真实设备交互、数据源失败降级、金融文案与隐私检查。
