@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../../../shared/providers.dart';
 import '../../stock/data/cached_stock_api_service.dart';
 import '../../analysis/domain/analysis_engine.dart';
@@ -12,23 +13,29 @@ enum BacktestStatus { idle, loading, done, error }
 
 class BacktestState {
   final BacktestStatus status;
-  final BacktestResult? result;
+  final BacktestReport? report;
+  final BacktestComparison? comparison;
   final String? errorMessage;
 
   const BacktestState({
     this.status = BacktestStatus.idle,
-    this.result,
+    this.report,
+    this.comparison,
     this.errorMessage,
   });
 
+  BacktestResult? get result => report?.result;
+
   BacktestState copyWith({
     BacktestStatus? status,
-    BacktestResult? result,
+    BacktestReport? report,
+    BacktestComparison? comparison,
     String? errorMessage,
   }) {
     return BacktestState(
       status: status ?? this.status,
-      result: result ?? this.result,
+      report: report ?? this.report,
+      comparison: comparison ?? this.comparison,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -40,35 +47,43 @@ class BacktestNotifier extends StateNotifier<BacktestState> {
   final StrategyService _strategyService;
   final CachedStockApiService _apiService;
   final AnalysisEngine _analysisEngine;
+  final Uuid _uuid;
 
   BacktestNotifier({
     required StrategyService strategyService,
     required CachedStockApiService apiService,
     required AnalysisEngine analysisEngine,
-  })  : _strategyService = strategyService,
-        _apiService = apiService,
-        _analysisEngine = analysisEngine,
-        super(const BacktestState());
+    Uuid uuid = const Uuid(),
+  }) : _strategyService = strategyService,
+       _apiService = apiService,
+       _analysisEngine = analysisEngine,
+       _uuid = uuid,
+       super(const BacktestState());
 
   Future<void> runBacktest({
     required String strategyId,
     required String stockCode,
     required String stockName,
     required String market,
+    String? strategyVersionId,
     BacktestConfig config = const BacktestConfig(),
   }) async {
     state = state.copyWith(status: BacktestStatus.loading);
 
     try {
       await _strategyService.init();
-      final strategy = _strategyService.getStrategy(strategyId);
-      if (strategy == null) {
+      final version = await _strategyService.getStrategyVersion(
+        strategyId,
+        versionId: strategyVersionId,
+      );
+      if (version == null) {
         state = state.copyWith(
           status: BacktestStatus.error,
-          errorMessage: '策略不存在',
+          errorMessage: '策略版本不存在',
         );
         return;
       }
+      final strategy = version.strategySnapshot;
 
       // Fetch kline data (up to 500 bars for backtest)
       final klines = await _apiService.fetchStockKline(
@@ -94,8 +109,56 @@ class BacktestNotifier extends StateNotifier<BacktestState> {
         analysisEngine: _analysisEngine,
       );
 
+      final now = DateTime.now();
+      final report = BacktestReport(
+        id: _uuid.v4(),
+        strategyId: strategyId,
+        strategyVersionId: version.id,
+        strategyVersionNumber: version.versionNumber,
+        stockName: stockName,
+        market: market,
+        config: config,
+        adjustmentMode: BacktestAdjustmentMode.forward,
+        dataFingerprint: backtestDataFingerprint(klines),
+        dataAsOf: klines.last.date,
+        createdAt: now,
+        result: result,
+      );
+      await _strategyService.saveBacktestReport(report);
+
+      final history = await _strategyService.getBacktestReports(
+        strategyId,
+        stockCode: stockCode,
+      );
+      final otherVersions = history
+          .where(
+            (item) =>
+                item.id != report.id &&
+                item.strategyVersionId != report.strategyVersionId,
+          )
+          .toList();
+      final baseline =
+          otherVersions
+              .where(
+                (item) =>
+                    item.result.stockCode == report.result.stockCode &&
+                    item.market == report.market &&
+                    item.adjustmentMode == report.adjustmentMode &&
+                    item.dataFingerprint == report.dataFingerprint &&
+                    item.config == report.config,
+              )
+              .firstOrNull ??
+          otherVersions.firstOrNull;
+      final comparison = baseline == null
+          ? null
+          : BacktestComparison.compare(baseline, report);
+
       if (!mounted) return;
-      state = state.copyWith(status: BacktestStatus.done, result: result);
+      state = state.copyWith(
+        status: BacktestStatus.done,
+        report: report,
+        comparison: comparison,
+      );
     } catch (e) {
       if (!mounted) return;
       state = state.copyWith(
@@ -115,11 +178,12 @@ class BacktestNotifier extends StateNotifier<BacktestState> {
 
 // ── Providers ───────────────────────────────────────────
 
-final backtestProvider =
-    StateNotifierProvider<BacktestNotifier, BacktestState>((ref) {
-  return BacktestNotifier(
-    strategyService: ref.read(strategyServiceProvider),
-    apiService: ref.read(cachedStockApiServiceProvider),
-    analysisEngine: ref.read(analysisEngineProvider),
-  );
-});
+final backtestProvider = StateNotifierProvider<BacktestNotifier, BacktestState>(
+  (ref) {
+    return BacktestNotifier(
+      strategyService: ref.read(strategyServiceProvider),
+      apiService: ref.read(cachedStockApiServiceProvider),
+      analysisEngine: ref.read(analysisEngineProvider),
+    );
+  },
+);

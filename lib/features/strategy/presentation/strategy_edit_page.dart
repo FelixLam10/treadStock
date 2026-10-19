@@ -25,6 +25,13 @@ const _indicatorLabels = {
   'ma_alignment': '均线排列度',
   'vol_price_divergence': '量价背离',
   'vol_ratio': '量比',
+  'price_ma_short': '收盘价/短期均线',
+  'price_ma_long': '收盘价/长期均线',
+  'market_environment': '趋势环境',
+  'ladder_breakout': '梯级平台突破',
+  'ladder_support_gap_pct': '梯级平台支撑距离',
+  'chan_third_buy': '简化缠论三买结构',
+  'chan_center_support_gap_pct': '简化中枢上沿距离',
 };
 
 const _conditionLabels = {
@@ -33,6 +40,14 @@ const _conditionLabels = {
   'in_range': '区间内',
   'cross_up': '上穿',
   'cross_down': '下穿',
+  'above': '高于',
+  'below': '低于',
+  'cross_up_confirmed': '上穿后确认',
+  'cross_down_confirmed': '下穿后确认',
+  'uptrend': '上升趋势',
+  'downtrend': '下降趋势',
+  'sideways': '横盘',
+  'not_sideways': '非横盘',
 };
 
 /// Strategy create/edit form page.
@@ -115,11 +130,7 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => context.pop(),
-          icon: Icon(
-            Icons.arrow_back_ios,
-            size: 20,
-            color: context.sc.gray700,
-          ),
+          icon: Icon(Icons.arrow_back_ios, size: 20, color: context.sc.gray700),
         ),
         title: Text(_isEdit ? '编辑策略' : '创建策略'),
         actions: [
@@ -221,9 +232,7 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
       children: [
         Text(
           '新手可以先使用系统生成的参数，运行几天后再根据复盘结果微调。',
-          style: AppTextStyles.caption.copyWith(
-            color: context.sc.textTertiary,
-          ),
+          style: AppTextStyles.caption.copyWith(color: context.sc.textTertiary),
         ),
         const SizedBox(height: 16),
         _buildSection('分析参数'),
@@ -350,8 +359,9 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
             const Spacer(),
             Text(
               '${rules.length} 条规则',
-              style:
-                  AppTextStyles.caption.copyWith(color: context.sc.textTertiary),
+              style: AppTextStyles.caption.copyWith(
+                color: context.sc.textTertiary,
+              ),
             ),
           ],
         ),
@@ -359,13 +369,14 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
         if (rules.isEmpty)
           Text(
             '暂无规则，点击下方添加',
-            style:
-                AppTextStyles.caption.copyWith(color: context.sc.textTertiary),
+            style: AppTextStyles.caption.copyWith(
+              color: context.sc.textTertiary,
+            ),
           )
         else
           ...rules.asMap().entries.map(
-                (entry) => _buildRuleCard(entry.key, entry.value, rules, onChanged),
-              ),
+            (entry) => _buildRuleCard(entry.key, entry.value, rules, onChanged),
+          ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: () async {
@@ -392,6 +403,12 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
       valueText =
           '${rule.value.toStringAsFixed(1)} ~ ${rule.value2!.toStringAsFixed(1)}';
     }
+    if (rule.isConfirmedCross) {
+      valueText = '${rule.confirmationDays} 个交易日';
+    } else if (rule.indicator == 'market_environment') {
+      valueText =
+          '${rule.lookbackDays} 日斜率阈值 ${rule.value.toStringAsFixed(2)}%';
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -403,11 +420,17 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
       child: Row(
         children: [
           Expanded(
-            child: Text('$indLabel $condLabel $valueText', style: AppTextStyles.body),
+            child: Text(
+              '$indLabel $condLabel $valueText',
+              style: AppTextStyles.body,
+            ),
           ),
           IconButton(
-            icon: Icon(Icons.delete_outline,
-                size: 18, color: context.sc.textTertiary),
+            icon: Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: context.sc.textTertiary,
+            ),
             onPressed: () {
               final newRules = List<SignalRule>.from(rules)..removeAt(index);
               onChanged(newRules);
@@ -431,7 +454,11 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.inventory_2_outlined, size: 22, color: StockColors.brand),
+            const Icon(
+              Icons.inventory_2_outlined,
+              size: 22,
+              color: StockColors.brand,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -439,11 +466,15 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
                 children: [
                   Text(
                     '从模板创建',
-                    style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
                     '波段低位、趋势跟随、量价反转等现成策略，一键应用',
-                    style: AppTextStyles.caption.copyWith(color: context.sc.textTertiary),
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.sc.textTertiary,
+                    ),
                   ),
                 ],
               ),
@@ -462,9 +493,7 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
         _buildSection('AI 生成辅助'),
         Text(
           '复制规则到任意大模型生成策略 JSON，再粘贴回来导入。App 不会调用模型或上传数据。',
-          style: AppTextStyles.caption.copyWith(
-            color: context.sc.textTertiary,
-          ),
+          style: AppTextStyles.caption.copyWith(color: context.sc.textTertiary),
         ),
         const SizedBox(height: 12),
         Row(
@@ -500,7 +529,6 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
       ],
     );
   }
-
 
   Future<void> _copyGenerationRules() async {
     await Clipboard.setData(
@@ -568,9 +596,7 @@ class _StrategyEditPageState extends ConsumerState<StrategyEditPage> {
         Expanded(
           child: Text(
             label,
-            style: AppTextStyles.body.copyWith(
-              color: context.sc.textSecondary,
-            ),
+            style: AppTextStyles.body.copyWith(color: context.sc.textSecondary),
           ),
         ),
         IconButton(

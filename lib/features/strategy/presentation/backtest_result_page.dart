@@ -9,9 +9,12 @@ import '../domain/backtest_models.dart';
 
 /// Page to display backtest results for a strategy.
 class BacktestResultPage extends StatelessWidget {
-  final BacktestResult result;
+  final BacktestReport report;
+  final BacktestComparison? comparison;
 
-  const BacktestResultPage({super.key, required this.result});
+  const BacktestResultPage({super.key, required this.report, this.comparison});
+
+  BacktestResult get result => report.result;
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +23,11 @@ class BacktestResultPage extends StatelessWidget {
       body: ListView(
         children: [
           _buildHeader(context),
+          _buildEvidence(context),
           _buildHealthBanner(context),
           _buildCoreStats(context),
           _buildPerformanceGrid(context),
+          _buildComparison(context),
           if (result.trades.isNotEmpty) _buildTradeList(context),
           const DisclaimerLabel(),
           const SizedBox(height: 40),
@@ -48,20 +53,25 @@ class BacktestResultPage extends StatelessWidget {
                     size: 20,
                     color: context.sc.gray700,
                   ),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                 ),
                 const Spacer(),
               ],
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.pagePadding,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('回测报告', style: AppTextStyles.h1),
                   const SizedBox(height: 4),
                   Text(
-                    '${result.strategyName} · ${result.stockCode}',
+                    '${result.strategyName} v${report.strategyVersionNumber} · ${report.stockName} ${result.stockCode}',
                     style: AppTextStyles.caption,
                   ),
                   if (result.startDate != null && result.endDate != null) ...[
@@ -83,17 +93,64 @@ class BacktestResultPage extends StatelessWidget {
   }
 
   String get _dateRange {
-    final start = '${result.startDate!.year}-${_two(result.startDate!.month)}-${_two(result.startDate!.day)}';
-    final end = '${result.endDate!.year}-${_two(result.endDate!.month)}-${_two(result.endDate!.day)}';
+    final start =
+        '${result.startDate!.year}-${_two(result.startDate!.month)}-${_two(result.startDate!.day)}';
+    final end =
+        '${result.endDate!.year}-${_two(result.endDate!.month)}-${_two(result.endDate!.day)}';
     return '$start 至 $end';
   }
 
   String _two(int n) => n.toString().padLeft(2, '0');
 
+  Widget _buildEvidence(BuildContext context) {
+    final config = report.config;
+    return Container(
+      key: const Key('backtest-evidence'),
+      margin: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        12,
+        AppTheme.pagePadding,
+        0,
+      ),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.sc.bgSecondary,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('回测证据快照', style: AppTextStyles.h3),
+          const SizedBox(height: 8),
+          _gridRow(context, '策略版本', 'v${report.strategyVersionNumber}'),
+          _gridRow(context, '复权方式', report.adjustmentMode.label),
+          _gridRow(context, '数据截止', _fmtFullDate(report.dataAsOf)),
+          _gridRow(
+            context,
+            '初始资金 / 仓位',
+            '${config.initialCapital.toStringAsFixed(0)} 元 / ${(config.positionSize * 100).toStringAsFixed(0)}%',
+          ),
+          _gridRow(
+            context,
+            '佣金 / 印花税',
+            '${(config.commissionRate * 100).toStringAsFixed(3)}% / ${(config.stampTaxRate * 100).toStringAsFixed(2)}%',
+          ),
+          _gridRow(context, '滑点', '${config.slippage.toStringAsFixed(2)} 元/股'),
+          _gridRow(context, '数据指纹', report.dataFingerprint.substring(0, 8)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHealthBanner(BuildContext context) {
     final color = _healthColor(context);
     return Container(
-      margin: const EdgeInsets.fromLTRB(AppTheme.pagePadding, 12, AppTheme.pagePadding, 0),
+      margin: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        12,
+        AppTheme.pagePadding,
+        0,
+      ),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
@@ -109,13 +166,19 @@ class BacktestResultPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(result.healthLabel, style: AppTextStyles.h3),
-                if (result.totalTrades > 0) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '共 ${result.totalTrades} 笔交易，处理 ${result.barsProcessed} 根K线',
-                    style: AppTextStyles.caption.copyWith(color: context.sc.textSecondary),
+                const SizedBox(height: 2),
+                Text(
+                  report.sampleMessage,
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.sc.textSecondary,
                   ),
-                ],
+                ),
+                Text(
+                  '处理 ${result.barsProcessed} 根K线 · 仅供观察与复盘',
+                  style: AppTextStyles.micro.copyWith(
+                    color: context.sc.textTertiary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -125,16 +188,24 @@ class BacktestResultPage extends StatelessWidget {
   }
 
   Color _healthColor(BuildContext context) {
-    if (result.totalTrades == 0) return context.sc.textTertiary;
-    if (result.winRate >= 0.6 && result.profitFactor >= 1.5) return StockColors.success;
-    if (result.winRate >= 0.45 && result.profitFactor >= 1.0) return StockColors.warning;
+    if (!report.hasEnoughSample) return context.sc.textTertiary;
+    if (result.winRate >= 0.6 && result.profitFactor >= 1.5) {
+      return StockColors.success;
+    }
+    if (result.winRate >= 0.45 && result.profitFactor >= 1.0) {
+      return StockColors.warning;
+    }
     return StockColors.danger;
   }
 
   IconData get _healthIcon {
-    if (result.totalTrades == 0) return Icons.info_outline;
-    if (result.winRate >= 0.6 && result.profitFactor >= 1.5) return Icons.task_alt;
-    if (result.winRate >= 0.45 && result.profitFactor >= 1.0) return Icons.trending_flat;
+    if (!report.hasEnoughSample) return Icons.info_outline;
+    if (result.winRate >= 0.6 && result.profitFactor >= 1.5) {
+      return Icons.task_alt;
+    }
+    if (result.winRate >= 0.45 && result.profitFactor >= 1.0) {
+      return Icons.trending_flat;
+    }
     return Icons.trending_down;
   }
 
@@ -149,14 +220,29 @@ class BacktestResultPage extends StatelessWidget {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppTheme.pagePadding, 12, AppTheme.pagePadding, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        12,
+        AppTheme.pagePadding,
+        0,
+      ),
       child: Row(
         children: [
           _statCard(context, '胜率', _pct(result.winRate), _winRateColor),
           const SizedBox(width: 8),
-          _statCard(context, '总收益', '${result.totalReturnPct.toStringAsFixed(1)}%', _returnColor(context)),
+          _statCard(
+            context,
+            '总收益',
+            '${result.totalReturnPct.toStringAsFixed(1)}%',
+            _returnColor(context),
+          ),
           const SizedBox(width: 8),
-          _statCard(context, '最大回撤', '${result.maxDrawdownPct.toStringAsFixed(1)}%', StockColors.danger),
+          _statCard(
+            context,
+            '最大回撤',
+            '${result.maxDrawdownPct.toStringAsFixed(1)}%',
+            StockColors.danger,
+          ),
         ],
       ),
     );
@@ -176,7 +262,12 @@ class BacktestResultPage extends StatelessWidget {
 
   String _pct(double v) => '${(v * 100).toStringAsFixed(1)}%';
 
-  Widget _statCard(BuildContext context, String label, String value, Color valueColor) {
+  Widget _statCard(
+    BuildContext context,
+    String label,
+    String value,
+    Color valueColor,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -188,7 +279,10 @@ class BacktestResultPage extends StatelessWidget {
           children: [
             Text(label, style: AppTextStyles.caption),
             const SizedBox(height: 4),
-            Text(value, style: AppTextStyles.numberSm.copyWith(color: valueColor)),
+            Text(
+              value,
+              style: AppTextStyles.numberSm.copyWith(color: valueColor),
+            ),
           ],
         ),
       ),
@@ -199,7 +293,12 @@ class BacktestResultPage extends StatelessWidget {
     if (result.totalTrades == 0) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(AppTheme.pagePadding, 12, AppTheme.pagePadding, 0),
+      margin: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        12,
+        AppTheme.pagePadding,
+        0,
+      ),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.sc.bgSecondary,
@@ -213,20 +312,103 @@ class BacktestResultPage extends StatelessWidget {
           _gridRow(context, '盈利次数', '${result.winCount}'),
           _gridRow(context, '亏损次数', '${result.loseCount}'),
           _gridRow(context, '盈亏比', result.profitFactor.toStringAsFixed(2)),
-          _gridRow(context, '年均收益', '${result.annualizedReturn.toStringAsFixed(1)}%'),
-          _gridRow(context, '平均持仓', '${result.avgHoldingDays.toStringAsFixed(1)} 天'),
+          _gridRow(
+            context,
+            '年均收益',
+            '${result.annualizedReturn.toStringAsFixed(1)}%',
+          ),
+          _gridRow(
+            context,
+            '平均持仓',
+            '${result.avgHoldingDays.toStringAsFixed(1)} 天',
+          ),
           _gridRow(context, '夏普比率', result.sharpeRatio.toStringAsFixed(2)),
           _gridRow(context, '最大连赢', '${result.maxConsecutiveWins} 次'),
           _gridRow(context, '最大连亏', '${result.maxConsecutiveLosses} 次'),
           _gridRow(context, '平均盈利', '+${result.avgWinPct.toStringAsFixed(1)}%'),
           _gridRow(context, '平均亏损', '${result.avgLossPct.toStringAsFixed(1)}%'),
-          _gridRow(context, '最佳交易', '+${result.bestTradePct.toStringAsFixed(1)}%'),
-          _gridRow(context, '最差交易', '${result.worstTradePct.toStringAsFixed(1)}%'),
+          _gridRow(
+            context,
+            '最佳交易',
+            '+${result.bestTradePct.toStringAsFixed(1)}%',
+          ),
+          _gridRow(
+            context,
+            '最差交易',
+            '${result.worstTradePct.toStringAsFixed(1)}%',
+          ),
           _gridRow(context, '净利(元)', result.totalNetProfit.toStringAsFixed(0)),
         ],
       ),
     );
   }
+
+  Widget _buildComparison(BuildContext context) {
+    final value = comparison;
+    if (value == null) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.pagePadding,
+          12,
+          AppTheme.pagePadding,
+          0,
+        ),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: context.sc.bgSecondary,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        ),
+        child: Text(
+          '暂无其他版本的同股回测记录。本报告已保存，可在另一版本使用相同条件回测后比较。',
+          style: AppTextStyles.caption.copyWith(
+            color: context.sc.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    final canCompare =
+        value.status != BacktestComparisonStatus.incompatibleInputs;
+    return Container(
+      key: const Key('backtest-version-comparison'),
+      margin: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        12,
+        AppTheme.pagePadding,
+        0,
+      ),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.sc.bgSecondary,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '版本对比 · v${value.baseline.strategyVersionNumber} → v${value.candidate.strategyVersionNumber}',
+            style: AppTextStyles.h3,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value.message,
+            style: AppTextStyles.caption.copyWith(
+              color: context.sc.textSecondary,
+            ),
+          ),
+          if (canCompare) ...[
+            const SizedBox(height: 8),
+            _gridRow(context, '总收益变化', _signedPct(value.returnDeltaPct)),
+            _gridRow(context, '胜率变化', _signedPct(value.winRateDelta * 100)),
+            _gridRow(context, '最大回撤变化', _signedPct(value.drawdownDeltaPct)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _signedPct(double value) =>
+      '${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)}%';
 
   Widget _gridRow(BuildContext context, String label, String value) {
     return Padding(
@@ -234,7 +416,12 @@ class BacktestResultPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppTextStyles.caption.copyWith(color: context.sc.textSecondary)),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: context.sc.textSecondary,
+            ),
+          ),
           Text(value, style: AppTextStyles.body),
         ],
       ),
@@ -246,7 +433,12 @@ class BacktestResultPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppTheme.pagePadding, 16, AppTheme.pagePadding, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.pagePadding,
+            16,
+            AppTheme.pagePadding,
+            8,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -303,7 +495,10 @@ class BacktestResultPage extends StatelessWidget {
                 ),
                 Text(
                   '${trade.shares}股 · $exitLabel · ${trade.exitBarIndex - trade.entryBarIndex}天',
-                  style: AppTextStyles.caption.copyWith(color: context.sc.textTertiary, fontSize: 11),
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.sc.textTertiary,
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -317,7 +512,10 @@ class BacktestResultPage extends StatelessWidget {
               ),
               Text(
                 '${trade.netProfit >= 0 ? '+' : ''}${trade.netProfit.toStringAsFixed(0)}',
-                style: AppTextStyles.caption.copyWith(color: color, fontSize: 11),
+                style: AppTextStyles.caption.copyWith(
+                  color: color,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
@@ -328,4 +526,7 @@ class BacktestResultPage extends StatelessWidget {
 
   String _fmtDate(DateTime d) =>
       '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+
+  String _fmtFullDate(DateTime d) =>
+      '${d.year}-${_two(d.month)}-${_two(d.day)}';
 }

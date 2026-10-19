@@ -13,8 +13,10 @@ import '../../../shared/utils/formatters.dart';
 import '../domain/strategy_explanation.dart';
 import '../domain/strategy_models.dart';
 import '../domain/strategy_trust_engine.dart';
+import '../domain/strategy_knowledge_package.dart';
 import '../domain/signal_rule.dart';
 import 'strategy_provider.dart';
+import 'strategy_knowledge_provider.dart';
 import 'widgets/trust_badge.dart';
 import 'widgets/backtest_summary_card.dart';
 import 'widgets/decision_bubble.dart';
@@ -85,8 +87,11 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
                 ),
                 if (state.stats.evaluatedCount > 0)
                   DecisionBubble(
-                    summaryText: StrategyTrustEngine.evaluate(state.stats).description,
-                    detailText: '综合分由命中率（40%权重）、样本量（30%权重）和运行天数（30%权重）计算得出，仅供参考，不构成投资建议。',
+                    summaryText: StrategyTrustEngine.evaluate(
+                      state.stats,
+                    ).description,
+                    detailText:
+                        '综合分由命中率（40%权重）、样本量（30%权重）和运行天数（30%权重）计算得出，仅供参考，不构成投资建议。',
                     signalColor: StrategyTrustEngine.trustColor(
                       StrategyTrustEngine.evaluate(state.stats).level,
                     ),
@@ -95,6 +100,7 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
               _buildStatsCards(state),
               BacktestSummaryCard(stats: state.stats),
               _buildSampleNotice(state),
+              _buildKnowledgeSection(),
               _buildStrategyCoreSection(state),
               _buildRuleVisualization(state),
               _buildHitRateTrend(state),
@@ -291,11 +297,16 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(strategy?.name ?? '策略详情', style: AppTextStyles.h1),
+                        child: Text(
+                          strategy?.name ?? '策略详情',
+                          style: AppTextStyles.h1,
+                        ),
                       ),
                       if (strategy != null && !state.isLoading)
                         TrustBadge(
-                          trustResult: StrategyTrustEngine.evaluate(state.stats),
+                          trustResult: StrategyTrustEngine.evaluate(
+                            state.stats,
+                          ),
                         ),
                     ],
                   ),
@@ -566,9 +577,7 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
           const SizedBox(height: 6),
           Text(
             '观察阈值 ${strategy.recommendThreshold} 分，${strategy.maShortPeriod}/${strategy.maLongPeriod} 日均线，布林带 ${strategy.bollPeriod} 日。',
-            style: AppTextStyles.body.copyWith(
-              color: context.sc.textSecondary,
-            ),
+            style: AppTextStyles.body.copyWith(color: context.sc.textSecondary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -579,6 +588,116 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildKnowledgeSection() {
+    final versionsAsync = ref.watch(
+      strategyVersionsProvider(widget.strategyId),
+    );
+    return versionsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (versions) {
+        if (versions.isEmpty) return const SizedBox.shrink();
+        final latest = versions.first;
+        final statusLabel = switch (latest.status) {
+          'active' => '使用中',
+          'candidate' => '候选版本',
+          _ => '草稿',
+        };
+        return Container(
+          key: const ValueKey('strategy-knowledge-section'),
+          margin: const EdgeInsets.fromLTRB(
+            AppTheme.pagePadding,
+            12,
+            AppTheme.pagePadding,
+            0,
+          ),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: context.sc.bgSecondary,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(child: Text('来源与版本', style: AppTextStyles.h3)),
+                  Text(
+                    'v${latest.versionNumber} · $statusLabel',
+                    style: AppTextStyles.caption.copyWith(
+                      color: latest.canEnable
+                          ? StockColors.brand
+                          : StockColors.warning,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${latest.strategyType.label} · 共 ${versions.length} 个不可变版本',
+                style: AppTextStyles.caption.copyWith(
+                  color: context.sc.textSecondary,
+                ),
+              ),
+              if (latest.sources.isEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '本地创建，暂无外部来源记录。',
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.sc.textTertiary,
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 8),
+                ...latest.sources.map(
+                  (source) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '• ${source.kind.label}${source.speaker == null ? '' : ' · ${source.speaker}'}：${source.summary}',
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.sc.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              if (latest.pendingQuestions.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '待确认 ${latest.pendingQuestions.length} 项，解决前不能启用。',
+                  style: AppTextStyles.caption.copyWith(
+                    color: StockColors.warning,
+                  ),
+                ),
+              ],
+              if (latest.compatibilityIssues.any((issue) => issue.blocking))
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    '存在当前引擎不支持的规则，仅可用于记录与继续完善。',
+                    style: AppTextStyles.caption.copyWith(
+                      color: StockColors.danger,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const ValueKey('open-strategy-version-history'),
+                  onPressed: () =>
+                      context.push('/strategy/${widget.strategyId}/versions'),
+                  icon: const Icon(Icons.history, size: 18),
+                  label: const Text('查看版本与差异'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -597,9 +716,7 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
           child: const Text('命中率趋势', style: AppTextStyles.h2),
         ),
         Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppTheme.pagePadding,
-          ),
+          margin: const EdgeInsets.symmetric(horizontal: AppTheme.pagePadding),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: context.sc.bgSecondary,
@@ -620,7 +737,10 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
             error: (_, _) => SizedBox(
               height: 200,
               child: Center(
-                child: Text('加载失败', style: TextStyle(fontSize: 13, color: context.sc.gray500)),
+                child: Text(
+                  '加载失败',
+                  style: TextStyle(fontSize: 13, color: context.sc.gray500),
+                ),
               ),
             ),
           ),
@@ -893,7 +1013,10 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Divider(height: 1, color: AppTextStyles.caption.color?.withValues(alpha: 0.2)),
+          Divider(
+            height: 1,
+            color: AppTextStyles.caption.color?.withValues(alpha: 0.2),
+          ),
           const SizedBox(height: 8),
           ...items.map((item) => _buildChecklistItemRow(item)),
         ],
@@ -1350,6 +1473,13 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
       'ma_alignment': '均线排列',
       'vol_price_divergence': '量价背离',
       'vol_ratio': '量比',
+      'price_ma_short': '收盘价/短期均线',
+      'price_ma_long': '收盘价/长期均线',
+      'market_environment': '趋势环境',
+      'ladder_breakout': '梯级平台突破',
+      'ladder_support_gap_pct': '梯级平台支撑距离',
+      'chan_third_buy': '简化缠论三买结构',
+      'chan_center_support_gap_pct': '简化中枢上沿距离',
     };
     final conditionNames = {
       'gt': '>',
@@ -1357,11 +1487,25 @@ class _StrategyDetailPageState extends ConsumerState<StrategyDetailPage> {
       'in_range': '∈',
       'cross_up': '上穿',
       'cross_down': '下穿',
+      'above': '高于',
+      'below': '低于',
+      'cross_up_confirmed': '上穿后确认',
+      'cross_down_confirmed': '下穿后确认',
+      'uptrend': '上升趋势',
+      'downtrend': '下降趋势',
+      'sideways': '横盘',
+      'not_sideways': '非横盘',
     };
     final name = indicatorNames[rule.indicator] ?? rule.indicator;
     final cond = conditionNames[rule.condition] ?? rule.condition;
     if (rule.condition == 'in_range' && rule.value2 != null) {
       return '$name $cond [${rule.value.toStringAsFixed(1)}, ${rule.value2!.toStringAsFixed(1)}]';
+    }
+    if (rule.isConfirmedCross) {
+      return '$name $cond ${rule.confirmationDays} 个交易日';
+    }
+    if (rule.indicator == 'market_environment') {
+      return '$name $cond（${rule.lookbackDays} 日斜率阈值 ${rule.value.toStringAsFixed(2)}%）';
     }
     return '$name $cond ${rule.value.toStringAsFixed(1)}';
   }

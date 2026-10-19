@@ -81,6 +81,14 @@ class _StrategyTabState extends ConsumerState<StrategyTab> {
             children: [
               Expanded(
                 child: _HeaderActionButton(
+                  icon: Icons.file_upload_outlined,
+                  label: '导入资料',
+                  onPressed: () => context.push('/strategy/import'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _HeaderActionButton(
                   icon: Icons.compare_arrows,
                   label: '对比',
                   onPressed: () => context.push('/strategy/compare'),
@@ -151,14 +159,18 @@ class _StrategyTabState extends ConsumerState<StrategyTab> {
   }
 
   Future<void> _handleToggle(Strategy strategy) async {
-    await ref
+    final changed = await ref
         .read(strategyListProvider.notifier)
         .toggleEnabled(strategy.id, !strategy.isEnabled);
     if (mounted) {
-      ToastHelper.showSuccess(
-        context,
-        strategy.isEnabled ? '已停用${strategy.name}' : '已启用${strategy.name}',
-      );
+      if (changed) {
+        ToastHelper.showSuccess(
+          context,
+          strategy.isEnabled ? '已停用${strategy.name}' : '已启用${strategy.name}',
+        );
+      } else {
+        ToastHelper.showError(context, '仍有待确认或当前不支持的规则，暂不能启用');
+      }
     }
   }
 }

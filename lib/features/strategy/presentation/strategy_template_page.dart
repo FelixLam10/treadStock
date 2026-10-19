@@ -28,8 +28,9 @@ class _StrategyTemplatePageState extends ConsumerState<StrategyTemplatePage> {
     setState(() => _applying = true);
 
     final detachedForm = StrategyFormData.fromForm(formData);
-    final success =
-        await ref.read(strategyListProvider.notifier).createStrategy(detachedForm);
+    final success = await ref
+        .read(strategyListProvider.notifier)
+        .createStrategy(detachedForm);
 
     if (!mounted) return;
     setState(() => _applying = false);
@@ -120,9 +121,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(left: 2),
       child: Text(
         title,
-        style: AppTextStyles.h2.copyWith(
-          color: context.sc.textPrimary,
-        ),
+        style: AppTextStyles.h2.copyWith(color: context.sc.textPrimary),
       ),
     );
   }
@@ -133,10 +132,7 @@ class _LearningGoalCard extends StatelessWidget {
   final StrategyLearningGoal goal;
   final VoidCallback onApply;
 
-  const _LearningGoalCard({
-    required this.goal,
-    required this.onApply,
-  });
+  const _LearningGoalCard({required this.goal, required this.onApply});
 
   @override
   Widget build(BuildContext context) {
@@ -154,11 +150,7 @@ class _LearningGoalCard extends StatelessWidget {
           // Title row
           Row(
             children: [
-              Icon(
-                Icons.school_outlined,
-                size: 20,
-                color: StockColors.brand,
-              ),
+              Icon(Icons.school_outlined, size: 20, color: StockColors.brand),
               const SizedBox(width: AppTheme.space2),
               Expanded(
                 child: Text(
@@ -175,9 +167,7 @@ class _LearningGoalCard extends StatelessWidget {
           // Subtitle / description
           Text(
             goal.subtitle,
-            style: AppTextStyles.body.copyWith(
-              color: context.sc.textSecondary,
-            ),
+            style: AppTextStyles.body.copyWith(color: context.sc.textSecondary),
           ),
           const SizedBox(height: AppTheme.space3),
 
@@ -208,20 +198,14 @@ class _LearningGoalCard extends StatelessWidget {
                 backgroundColor: StockColors.brand,
                 foregroundColor: context.sc.textOnPrimary,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppTheme.space3,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.space3),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusSm),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
               ),
               child: const Text(
                 '应用',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -236,10 +220,7 @@ class _ClassicTemplateCard extends StatelessWidget {
   final ApiStrategyTemplate template;
   final VoidCallback onApply;
 
-  const _ClassicTemplateCard({
-    required this.template,
-    required this.onApply,
-  });
+  const _ClassicTemplateCard({required this.template, required this.onApply});
 
   @override
   Widget build(BuildContext context) {
@@ -278,10 +259,36 @@ class _ClassicTemplateCard extends StatelessWidget {
           // Description
           Text(
             template.description,
-            style: AppTextStyles.body.copyWith(
-              color: context.sc.textSecondary,
-            ),
+            style: AppTextStyles.body.copyWith(color: context.sc.textSecondary),
           ),
+
+          if (template.coreTheory.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.space3),
+            _InfoRow(
+              icon: Icons.menu_book_outlined,
+              iconColor: StockColors.info,
+              label: '核心理论',
+              content: template.coreTheory,
+            ),
+          ],
+          if (template.practiceNotes.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.space2),
+            _InfoRow(
+              icon: Icons.fact_check_outlined,
+              iconColor: StockColors.brand,
+              label: '实践规则',
+              content: template.practiceNotes.join(' '),
+            ),
+          ],
+          if (template.riskNote.isNotEmpty) ...[
+            const SizedBox(height: AppTheme.space2),
+            _InfoRow(
+              icon: Icons.warning_amber_outlined,
+              iconColor: StockColors.warning,
+              label: '失效与风险',
+              content: template.riskNote,
+            ),
+          ],
 
           // API capabilities chips (if any)
           if (template.apiCapabilities.isNotEmpty) ...[
@@ -297,8 +304,7 @@ class _ClassicTemplateCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: context.sc.bgTertiary,
-                    borderRadius:
-                        BorderRadius.circular(AppTheme.radiusXs),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXs),
                   ),
                   child: Text(
                     cap,
@@ -322,20 +328,14 @@ class _ClassicTemplateCard extends StatelessWidget {
                 backgroundColor: StockColors.brand,
                 foregroundColor: context.sc.textOnPrimary,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppTheme.space3,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: AppTheme.space3),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppTheme.radiusSm),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
               ),
               child: const Text(
                 '应用',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),

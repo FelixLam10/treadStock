@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/strategy_service.dart';
 import '../domain/strategy_models.dart';
+import '../domain/strategy_knowledge_package.dart';
 import '../../../shared/providers.dart';
 
 /// State for strategy list tab.
@@ -57,10 +58,12 @@ class StrategyListNotifier extends StateNotifier<StrategyListState> {
     }
   }
 
-  Future<void> toggleEnabled(String id, bool isEnabled) async {
+  Future<bool> toggleEnabled(String id, bool isEnabled) async {
     await _strategyService.init();
-    await _strategyService.toggleEnabled(id, isEnabled);
+    final changed = await _strategyService.toggleEnabled(id, isEnabled);
+    if (!changed) return false;
     await loadStrategies();
+    return true;
   }
 
   Future<bool> deleteStrategy(String id) async {
@@ -93,6 +96,24 @@ class StrategyListNotifier extends StateNotifier<StrategyListState> {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<StrategyKnowledgeImportResult?> importKnowledgePackage(
+    StrategyKnowledgePackage package, {
+    bool retainSanitizedText = false,
+    String? targetStrategyId,
+  }) async {
+    try {
+      final result = await _strategyService.importKnowledgePackage(
+        package,
+        retainSanitizedText: retainSanitizedText,
+        targetStrategyId: targetStrategyId,
+      );
+      await loadStrategies();
+      return result;
+    } catch (_) {
+      return null;
     }
   }
 }

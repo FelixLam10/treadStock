@@ -18,6 +18,13 @@ const _indicatorLabels = {
   'ma_alignment': '均线排列度',
   'vol_price_divergence': '量价背离',
   'vol_ratio': '量比',
+  'price_ma_short': '收盘价相对短期均线（%）',
+  'price_ma_long': '收盘价相对长期均线（%）',
+  'market_environment': '短期均线趋势环境',
+  'ladder_breakout': '梯级平台突破',
+  'ladder_support_gap_pct': '梯级平台支撑距离（%）',
+  'chan_third_buy': '简化缠论三买结构',
+  'chan_center_support_gap_pct': '简化中枢上沿距离（%）',
 };
 
 const _conditionLabels = {
@@ -26,7 +33,33 @@ const _conditionLabels = {
   'in_range': '区间内',
   'cross_up': '上穿',
   'cross_down': '下穿',
+  'above': '高于',
+  'below': '低于',
+  'cross_up_confirmed': '上穿后连续确认',
+  'cross_down_confirmed': '下穿后连续确认',
+  'uptrend': '上升趋势',
+  'downtrend': '下降趋势',
+  'sideways': '横盘震荡',
+  'not_sideways': '非横盘环境',
 };
+
+Map<String, String> _conditionsForIndicator(String indicator) {
+  if (indicator == 'price_ma_short' || indicator == 'price_ma_long') {
+    const keys = [
+      'above',
+      'below',
+      'cross_up_confirmed',
+      'cross_down_confirmed',
+    ];
+    return {for (final key in keys) key: _conditionLabels[key]!};
+  }
+  if (indicator == 'market_environment') {
+    const keys = ['uptrend', 'downtrend', 'sideways', 'not_sideways'];
+    return {for (final key in keys) key: _conditionLabels[key]!};
+  }
+  const keys = ['gt', 'lt', 'in_range', 'cross_up', 'cross_down'];
+  return {for (final key in keys) key: _conditionLabels[key]!};
+}
 
 /// Bottom sheet for adding/editing a single SignalRule.
 /// Returns SignalRule? when user confirms, null on cancel.
@@ -38,8 +71,10 @@ class SignalRuleEditSheet extends StatefulWidget {
   @override
   State<SignalRuleEditSheet> createState() => _SignalRuleEditSheetState();
 
-  static Future<SignalRule?> show(BuildContext context,
-      {SignalRule? initialRule}) {
+  static Future<SignalRule?> show(
+    BuildContext context, {
+    SignalRule? initialRule,
+  }) {
     return showModalBottomSheet<SignalRule>(
       context: context,
       isScrollControlled: true,
@@ -53,6 +88,8 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
   late String _condition;
   late TextEditingController _valueController;
   late TextEditingController _value2Controller;
+  late TextEditingController _confirmationDaysController;
+  late TextEditingController _lookbackDaysController;
 
   @override
   void initState() {
@@ -66,12 +103,20 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
     _value2Controller = TextEditingController(
       text: rule?.value2 != null ? rule!.value2.toString() : '',
     );
+    _confirmationDaysController = TextEditingController(
+      text: '${rule?.confirmationDays ?? 2}',
+    );
+    _lookbackDaysController = TextEditingController(
+      text: '${rule?.lookbackDays ?? 5}',
+    );
   }
 
   @override
   void dispose() {
     _valueController.dispose();
     _value2Controller.dispose();
+    _confirmationDaysController.dispose();
+    _lookbackDaysController.dispose();
     super.dispose();
   }
 
@@ -80,9 +125,9 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
   void _handleConfirm() {
     final value = double.tryParse(_valueController.text.trim());
     if (value == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请输入有效的阈值')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请输入有效的阈值')));
       return;
     }
 
@@ -90,9 +135,9 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
     if (_condition == 'in_range') {
       value2 = double.tryParse(_value2Controller.text.trim());
       if (value2 == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('请输入有效的区间上限')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('请输入有效的区间上限')));
         return;
       }
     }
@@ -102,9 +147,25 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
       condition: _condition,
       value: value,
       value2: value2,
+      confirmationDays: _isConfirmedCondition
+          ? (int.tryParse(_confirmationDaysController.text.trim()) ?? 2).clamp(
+              1,
+              20,
+            )
+          : 1,
+      lookbackDays: _indicator == 'market_environment'
+          ? (int.tryParse(_lookbackDaysController.text.trim()) ?? 5).clamp(
+              1,
+              60,
+            )
+          : 5,
     );
     Navigator.of(context).pop(rule);
   }
+
+  bool get _isConfirmedCondition =>
+      _condition == 'cross_up_confirmed' ||
+      _condition == 'cross_down_confirmed';
 
   @override
   Widget build(BuildContext context) {
@@ -121,10 +182,7 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Title
-          Text(
-            _isEditMode ? '编辑规则' : '添加规则',
-            style: AppTextStyles.h2,
-          ),
+          Text(_isEditMode ? '编辑规则' : '添加规则', style: AppTextStyles.h2),
           const SizedBox(height: 20),
 
           // Indicator selector
@@ -136,7 +194,13 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
           _buildDropdown(
             value: _indicator,
             items: _indicatorLabels,
-            onChanged: (v) => setState(() => _indicator = v!),
+            onChanged: (v) => setState(() {
+              _indicator = v!;
+              final conditions = _conditionsForIndicator(_indicator);
+              if (!conditions.containsKey(_condition)) {
+                _condition = conditions.keys.first;
+              }
+            }),
           ),
           const SizedBox(height: 16),
 
@@ -148,16 +212,62 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
           const SizedBox(height: 4),
           _buildDropdown(
             value: _condition,
-            items: _conditionLabels,
+            items: _conditionsForIndicator(_indicator),
             onChanged: (v) => setState(() => _condition = v!),
           ),
           const SizedBox(height: 16),
 
           // Threshold input
           Text(
-            _condition == 'in_range' ? '下限值' : '阈值',
+            _condition == 'in_range'
+                ? '下限值'
+                : _indicator == 'market_environment'
+                ? '横盘斜率阈值（%）'
+                : _indicator.startsWith('price_ma_')
+                ? '相对均线阈值（%）'
+                : '阈值',
             style: AppTextStyles.body.copyWith(color: context.sc.textSecondary),
           ),
+
+          if (_isConfirmedCondition) ...[
+            const SizedBox(height: 16),
+            Text(
+              '连续确认交易日',
+              style: AppTextStyles.body.copyWith(
+                color: context.sc.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _confirmationDaysController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: '例如 2：穿越当日 + 下一交易日',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.all(12),
+              ),
+            ),
+          ],
+
+          if (_indicator == 'market_environment') ...[
+            const SizedBox(height: 16),
+            Text(
+              '均线斜率观察交易日',
+              style: AppTextStyles.body.copyWith(
+                color: context.sc.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _lookbackDaysController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: '默认 5 个交易日',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.all(12),
+              ),
+            ),
+          ],
           const SizedBox(height: 4),
           TextField(
             controller: _valueController,
@@ -174,14 +284,16 @@ class _SignalRuleEditSheetState extends State<SignalRuleEditSheet> {
             const SizedBox(height: 16),
             Text(
               '上限值',
-              style:
-                  AppTextStyles.body.copyWith(color: context.sc.textSecondary),
+              style: AppTextStyles.body.copyWith(
+                color: context.sc.textSecondary,
+              ),
             ),
             const SizedBox(height: 4),
             TextField(
               controller: _value2Controller,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 hintText: '输入上限数值',
                 border: OutlineInputBorder(),

@@ -55,6 +55,10 @@ class SignalCardWidget extends StatelessWidget {
                 // Headline
                 Text(card.headline, style: AppTextStyles.bodyLg),
                 const SizedBox(height: 6),
+                if (card.ruleProgress.isNotEmpty) ...[
+                  _buildRuleProgress(context),
+                  const SizedBox(height: 8),
+                ],
                 // Indicator highlights row
                 if (card.highlights.isNotEmpty) ...[
                   _buildHighlights(context),
@@ -67,6 +71,9 @@ class SignalCardWidget extends StatelessWidget {
                 ],
                 // Suggestion
                 _buildSuggestion(context),
+                const SizedBox(height: 6),
+                _buildMetadata(context),
+                if (onTap != null) _buildBacktestAction(context),
               ],
             ),
           ),
@@ -98,10 +105,12 @@ class SignalCardWidget extends StatelessWidget {
                 color: context.sc.textTertiary,
               ),
               const SizedBox(width: 6),
-              Text(
-                card.headline,
-                style: AppTextStyles.body.copyWith(
-                  color: context.sc.textSecondary,
+              Expanded(
+                child: Text(
+                  '${card.resultStatus.label} · ${card.headline}',
+                  style: AppTextStyles.body.copyWith(
+                    color: context.sc.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -115,6 +124,13 @@ class SignalCardWidget extends StatelessWidget {
               ),
             ),
           ],
+          if (card.ruleProgress.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildRuleProgress(context),
+          ],
+          const SizedBox(height: 8),
+          _buildMetadata(context),
+          if (onTap != null) _buildBacktestAction(context),
         ],
       ),
     );
@@ -133,7 +149,7 @@ class SignalCardWidget extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: Text(
-            card.tag,
+            '${card.resultStatus.label} · ${card.tag}',
             style: AppTextStyles.micro.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
@@ -144,7 +160,9 @@ class SignalCardWidget extends StatelessWidget {
         // Strategy name
         Expanded(
           child: Text(
-            card.strategyName,
+            card.strategyVersion == null
+                ? card.strategyName
+                : '${card.strategyName} · v${card.strategyVersion}',
             style: AppTextStyles.caption.copyWith(
               color: context.sc.textSecondary,
             ),
@@ -154,11 +172,7 @@ class SignalCardWidget extends StatelessWidget {
         ),
         // Arrow icon
         if (onTap != null)
-          Icon(
-            Icons.chevron_right,
-            size: 18,
-            color: context.sc.textTertiary,
-          ),
+          Icon(Icons.chevron_right, size: 18, color: context.sc.textTertiary),
       ],
     );
   }
@@ -244,11 +258,7 @@ class SignalCardWidget extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.lightbulb_outline,
-          size: 14,
-          color: context.sc.textTertiary,
-        ),
+        Icon(Icons.lightbulb_outline, size: 14, color: context.sc.textTertiary),
         const SizedBox(width: 4),
         Expanded(
           child: Text(
@@ -259,6 +269,57 @@ class SignalCardWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildRuleProgress(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: card.ruleProgress.take(3).map((message) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 3),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.timeline, size: 13, color: context.sc.textTertiary),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.sc.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMetadata(BuildContext context) {
+    final version = card.strategyVersion == null
+        ? '版本未标记'
+        : '策略 v${card.strategyVersion}';
+    final sample = card.sampleStatus == StrategySampleStatus.reviewable
+        ? '${card.sampleStatus.label}（${card.sampleCount} 条）'
+        : '${card.sampleStatus.label}（${card.sampleCount}/20）';
+    return Text(
+      '$version · $sample · 仅供观察与复盘',
+      style: AppTextStyles.micro.copyWith(color: context.sc.textTertiary),
+    );
+  }
+
+  Widget _buildBacktestAction(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton.icon(
+        key: const Key('signal-card-backtest'),
+        onPressed: onTap,
+        icon: const Icon(Icons.query_stats_outlined, size: 15),
+        label: const Text('用当前股票回测'),
+      ),
     );
   }
 
