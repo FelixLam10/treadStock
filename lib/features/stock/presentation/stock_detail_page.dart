@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:stockpilot/core/theme/app_semantic_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,9 +23,11 @@ import '../../../shared/widgets/decision_labels/decision_labels_panel.dart';
 import '../../strategy/domain/decision_engine.dart';
 import '../../strategy/domain/decision_signal_engine.dart';
 import '../../strategy/domain/signal_card.dart';
+import '../../strategy/domain/strategy_analysis_state.dart';
 import '../../strategy/presentation/widgets/signal_card_widget.dart';
 import '../../strategy/presentation/widgets/decision_signal_badge.dart';
 import '../../strategy/presentation/widgets/decision_bubble.dart';
+import 'widgets/stock_fundamentals_card.dart';
 
 /// Stock detail page.
 /// Design: DESIGN.md Page 3 - Stock Detail Page.
@@ -53,10 +56,13 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
   StockQuote? _quote;
   StockScore? _score;
   List<StockNews>? _news;
+  StockFundamentals? _fundamentals;
   bool _isLoading = true;
   bool _loadError = false;
   bool _newsLoading = true;
   bool _newsError = false;
+  bool _fundamentalsLoading = true;
+  bool _fundamentalsError = false;
   bool _alertEnabled = false;
   bool _isWatched = false;
   final TextEditingController _alertThresholdController =
@@ -68,6 +74,7 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
   StrategyScoreResult? _strategyScore;
   List<StrategyScoreResult>? _allStrategyScores;
   List<SignalCard>? _signalCards;
+  String? _strategyAnalysisError;
 
   @override
   void initState() {
@@ -152,6 +159,31 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
     }
   }
 
+  Future<void> _toggleAlert(bool value) async {
+    final watchlistService = ref.read(watchlistServiceProvider);
+    await watchlistService.init();
+    final item = watchlistService.findByCode(widget.code);
+
+    // Alerts are persisted on watchlist rows, so a stock must be watched
+    // before the switch can be enabled.
+    if (item == null) {
+      if (!mounted) return;
+      setState(() => _alertEnabled = false);
+      ToastHelper.showError(context, '请先加入关注后再开启提醒');
+      return;
+    }
+
+    setState(() => _alertEnabled = value);
+    await watchlistService.toggleAlert(item.id, value);
+    ref.read(watchlistProvider.notifier).reload();
+
+    if (!mounted) return;
+    ToastHelper.showSuccess(
+      context,
+      value ? '已开启${widget.name}下跌预警' : '已关闭${widget.name}下跌预警',
+    );
+  }
+
   Future<void> _loadData() async {
     final apiService = ref.read(cachedStockApiServiceProvider);
     final engine = ref.read(analysisEngineProvider);
@@ -221,17 +253,43 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
         allScores.sort((a, b) => b.score.score.compareTo(a.score.score));
         setState(() => _allStrategyScores = allScores);
 
-        final signalCards = DecisionSignalEngine.evaluateMultiple(
-          klines: klines,
-          strategies: selectedStrategy != null
-              ? [selectedStrategy]
-              : strategies,
-          stockCode: widget.code,
-          stockName: widget.name,
-          currentPrice: lastKline.close,
-          changePct: lastKline.changePct,
-        );
-        setState(() => _signalCards = signalCards);
+        try {
+          final versionNumbers = <String, int>{};
+          for (final strategy in strategies) {
+            final versions = await strategyService.getStrategyVersions(
+              strategy.id,
+            );
+            for (final version in versions) {
+              if (version.status != 'candidate') {
+                versionNumbers[strategy.id] = version.versionNumber;
+                break;
+              }
+            }
+          }
+          final signalCards = DecisionSignalEngine.evaluateMultiple(
+            klines: klines,
+            strategies: selectedStrategy != null
+                ? [selectedStrategy]
+                : strategies,
+            stockCode: widget.code,
+            stockName: widget.name,
+            currentPrice: lastKline.close,
+            changePct: lastKline.changePct,
+            strategyVersions: versionNumbers,
+          );
+          setState(() {
+            _signalCards = signalCards;
+            _strategyAnalysisError = null;
+          });
+        } catch (error, stackTrace) {
+          debugPrint(
+            '[StockDetail] strategy analysis failed: $error\n$stackTrace',
+          );
+          setState(() {
+            _signalCards = const [];
+            _strategyAnalysisError = '策略计算失败，请稍后重试';
+          });
+        }
 
         final closes = klines.map((k) => k.close).toList();
         final ma20List = engine.calculateMA(closes, 20);
@@ -240,6 +298,28 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
           _ma20 = ma20List.isNotEmpty ? ma20List.last : null;
           _ma60 = ma60List.isNotEmpty ? ma60List.last : null;
         });
+      } else {
+        final quote = await apiService.fetchStockQuote(
+          widget.code,
+          market: widget.market,
+        );
+        if (quote != null && mounted) {
+          setState(() {
+            _quote = quote;
+            _klines = const [];
+            _score = const StockScore(
+              score: 0,
+              maScore: 0,
+              bollScore: 0,
+              volScore: 0,
+              trendScore: 0,
+              isBandLow: false,
+              reason: 'K线数据不足',
+            );
+          });
+        } else if (mounted) {
+          setState(() => _loadError = true);
+        }
       }
     } catch (e, st) {
       // K-line / score load failed. Unlike the previous silent swallow, mark
@@ -253,20 +333,66 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
 
     // P3: news is useful context, but it should never block the decision
     // surface. Schedule it after the primary chart/score path has settled.
+    Future.microtask(_loadFundamentals);
     Future.microtask(_loadNews);
   }
 
+  Future<void> _loadFundamentals() async {
+    if (mounted) {
+      setState(() {
+        _fundamentalsLoading = true;
+        _fundamentalsError = false;
+      });
+    }
+    try {
+      final apiService = ref.read(stockApiServiceProvider);
+      final fundamentals = await apiService.fetchStockFundamentals(
+        widget.code,
+        stockName: widget.name,
+        market: widget.market,
+      );
+      if (!mounted) return;
+      setState(() {
+        _fundamentals = fundamentals;
+        _fundamentalsLoading = false;
+        _fundamentalsError =
+            fundamentals == null && StockMarket.isAShare(widget.market);
+      });
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[StockDetail] fundamentals failed for ${widget.code}: '
+        '$error\n$stackTrace',
+      );
+      if (!mounted) return;
+      setState(() {
+        _fundamentalsLoading = false;
+        _fundamentalsError = true;
+      });
+    }
+  }
+
+  Future<void> _copyStockName() async {
+    await Clipboard.setData(ClipboardData(text: widget.name));
+    if (!mounted) return;
+    ToastHelper.showSuccess(context, '已复制标的名');
+  }
+
   Future<void> _loadNews() async {
-    setState(() => _newsLoading = true);
-    setState(() => _newsError = false);
+    if (!mounted) return;
+    setState(() {
+      _newsLoading = true;
+      _newsError = false;
+    });
     try {
       final apiService = ref.read(stockApiServiceProvider);
       final news = await apiService.fetchStockNews(widget.code);
+      if (!mounted) return;
       setState(() {
         _news = news;
         _newsLoading = false;
       });
     } catch (_) {
+      if (!mounted) return;
       setState(() {
         _newsLoading = false;
         _newsError = true;
@@ -395,10 +521,7 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
     // permission, which made news items silently un-clickable. Just try to
     // launch; surface an error toast only if it actually fails.
     try {
-      final ok = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!ok && mounted) {
         ToastHelper.showError(context, '无法打开链接');
       }
@@ -422,177 +545,152 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
       body: RefreshIndicator(
         color: StockColors.brand,
         onRefresh: _loadData,
-        child: ListView(
-          children: [
-            // Navigation bar + header
-            _buildHeader(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              key: const ValueKey('stock-detail-pinned-actions'),
+              pinned: true,
+              automaticallyImplyLeading: false,
+              toolbarHeight: 52,
+              titleSpacing: 4,
+              elevation: 0,
+              scrolledUnderElevation: 1,
+              shadowColor: context.sc.border,
+              surfaceTintColor: Colors.transparent,
+              backgroundColor: context.sc.bgPrimary,
+              title: _buildPinnedActionRow(),
+            ),
+            SliverList(
+              delegate: SliverChildListDelegate([
+                _buildHeaderDetails(),
 
-            // When the main data load failed (and we have no klines at all),
-            // surface a retry affordance instead of a blank price section.
-            if (_loadError && _klines == null) ...[
-              _buildLoadErrorState(),
-              const DisclaimerLabel(),
-              const SizedBox(height: 80),
-            ] else ...[
-              // Price section
-              _isLoading
-                  ? const DetailSectionSkeleton(height: 120)
-                  : _buildPriceSection(),
-
-              // K-line chart section (candles + MA + BOLL + volume).
-              _isLoading
-                  ? const DetailSectionSkeleton(
-                      height: StockKlineChart.defaultHeight,
-                    )
-                  : _buildKlineSection(),
-
-              // Score + indicators section
-              _isLoading
-                  ? const DetailSectionSkeleton(height: 80)
-                  : _buildScoreSection(),
-
-              _isLoading
-                  ? const SizedBox.shrink()
-                  : _buildStrategyScoreSection(),
-
-              // Signal cards
-              _isLoading ? const SizedBox.shrink() : _buildSignalCardsSection(),
-
-              // Decision signal card
-              _isLoading
-                  ? const SizedBox.shrink()
-                  : _buildDecisionSignalOverviewSection(),
-
-              // Decision bubble for signal explanation
-              _isLoading ? const SizedBox.shrink() : _buildDecisionBubble(),
-
-              // Decision labels
-              _isLoading
-                  ? const SizedBox.shrink()
-                  : DecisionLabelsPanel(score: _score),
-
-              // Company info section
-              _isLoading
-                  ? const DetailSectionSkeleton(height: 80)
-                  : _buildCompanyInfoSection(),
-
-              // Daily summary section
-              _isLoading
-                  ? const DetailSectionSkeleton(height: 80)
-                  : _buildSummarySection(),
-
-              // News section
-              const SizedBox(height: 8),
-              _buildNewsSection(),
-
-              // Disclaimer
-              const DisclaimerLabel(),
-              const SizedBox(height: 80),
-            ],
+                // When the main data load failed (and we have no klines at
+                // all), surface a retry affordance instead of a blank price.
+                if (_loadError && _klines == null) ...[
+                  _buildLoadErrorState(),
+                  const DisclaimerLabel(),
+                  const SizedBox(height: 80),
+                ] else ...[
+                  _isLoading
+                      ? const DetailSectionSkeleton(height: 120)
+                      : _buildPriceSection(),
+                  _buildFundamentalsSection(),
+                  _isLoading
+                      ? const DetailSectionSkeleton(
+                          height: StockKlineChart.defaultHeight,
+                        )
+                      : _buildKlineSection(),
+                  _isLoading
+                      ? const DetailSectionSkeleton(height: 80)
+                      : _buildScoreSection(),
+                  _isLoading
+                      ? const SizedBox.shrink()
+                      : _buildStrategyScoreSection(),
+                  _isLoading
+                      ? const SizedBox.shrink()
+                      : _buildSignalCardsSection(),
+                  _isLoading
+                      ? const SizedBox.shrink()
+                      : _buildDecisionSignalOverviewSection(),
+                  _isLoading ? const SizedBox.shrink() : _buildDecisionBubble(),
+                  _isLoading
+                      ? const SizedBox.shrink()
+                      : DecisionLabelsPanel(score: _score),
+                  _isLoading
+                      ? const DetailSectionSkeleton(height: 80)
+                      : _buildCompanyInfoSection(),
+                  _isLoading
+                      ? const DetailSectionSkeleton(height: 80)
+                      : _buildSummarySection(),
+                  const SizedBox(height: 8),
+                  _buildNewsSection(),
+                  const DisclaimerLabel(),
+                  const SizedBox(height: 80),
+                ],
+              ]),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, AppTheme.pagePadding, 0),
-        child: Column(
-          children: [
-            // Nav row
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () => context.pop(),
-                  icon: Icon(
-                    Icons.arrow_back_ios,
-                    size: 20,
-                    color: context.sc.gray700,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
-                ),
-                const Spacer(),
-                // Watch toggle (add / remove from watchlist). Placed before the
-                // alert switch because enabling alerts requires being watched.
-                IconButton(
-                  onPressed: _toggleWatch,
-                  icon: Icon(
-                    _isWatched
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
-                    size: 26,
-                    color: _isWatched
-                        ? const Color(0xFFF5A623)
-                        : context.sc.gray700,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
-                  tooltip: _isWatched ? '取消关注' : '加入关注',
-                ),
-                // Alert toggle switch.
-                Switch(
-                  value: _alertEnabled,
-                  onChanged: (value) async {
-                    final watchlistService = ref.read(watchlistServiceProvider);
-                    await watchlistService.init();
-                    final item = watchlistService.findByCode(widget.code);
-
-                    // Guard: alerts require the stock to be in the watchlist.
-                    // Without this, the switch would visually toggle but the
-                    // flag is never persisted (silent no-op).
-                    if (item == null) {
-                      if (!mounted) return;
-                      setState(() => _alertEnabled = false);
-                      ToastHelper.showError(context, '请先加入关注后再开启提醒');
-                      return;
-                    }
-
-                    setState(() => _alertEnabled = value);
-                    await watchlistService.toggleAlert(item.id, value);
-                    ref.read(watchlistProvider.notifier).reload();
-
-                    if (!mounted) return;
-
-                    if (value) {
-                      ToastHelper.showSuccess(context, '已开启${widget.name}下跌预警');
-                    } else {
-                      ToastHelper.showSuccess(context, '已关闭${widget.name}下跌预警');
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            // Stock name + code
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.pagePadding,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(widget.name, style: AppTextStyles.h1),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${widget.code}.${widget.market}',
-                    style: AppTextStyles.caption,
-                  ),
-                ],
-              ),
-            ),
-            // Price-threshold alert config — only when watched & alert on.
-            // Lets the user set a "notify when price drops at or below X".
-            if (_isWatched && _alertEnabled) _buildAlertThresholdRow(),
-          ],
+  Widget _buildPinnedActionRow() {
+    return Row(
+      children: [
+        IconButton(
+          key: const ValueKey('stock-detail-back'),
+          onPressed: () => context.pop(),
+          icon: Icon(Icons.arrow_back_ios, size: 20, color: context.sc.gray700),
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          tooltip: '返回',
         ),
+        const Spacer(),
+        Tooltip(
+          message: _isWatched ? '取消关注' : '加入关注',
+          child: TextButton.icon(
+            key: const ValueKey('stock-detail-watch-toggle'),
+            onPressed: _toggleWatch,
+            icon: Icon(
+              _isWatched ? Icons.star_rounded : Icons.star_outline_rounded,
+              size: 20,
+            ),
+            label: Text(_isWatched ? '取消关注' : '关注'),
+            style: TextButton.styleFrom(
+              foregroundColor: _isWatched
+                  ? const Color(0xFFF5A623)
+                  : context.sc.gray700,
+              minimumSize: const Size(44, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '下跌预警',
+          style: AppTextStyles.micro.copyWith(color: context.sc.textSecondary),
+        ),
+        Switch(
+          key: const ValueKey('stock-detail-alert-toggle'),
+          value: _alertEnabled,
+          onChanged: _toggleAlert,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderDetails() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        8,
+        AppTheme.pagePadding,
+        0,
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(child: Text(widget.name, style: AppTextStyles.h1)),
+              const SizedBox(width: 4),
+              IconButton(
+                tooltip: '复制标的名',
+                visualDensity: VisualDensity.compact,
+                iconSize: 18,
+                onPressed: _copyStockName,
+                icon: Icon(Icons.copy_rounded, color: context.sc.textTertiary),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${widget.code}.${StockMarket.displayLabel(widget.market)}',
+                style: AppTextStyles.caption,
+              ),
+            ],
+          ),
+          if (_isWatched && _alertEnabled) _buildAlertThresholdRow(),
+        ],
       ),
     );
   }
@@ -839,8 +937,23 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
 
   Widget _buildSignalCardsSection() {
     final cards = _signalCards;
-    if (cards == null || cards.isEmpty) {
+    if (cards == null) {
       return const SizedBox.shrink();
+    }
+
+    if (cards.isEmpty) {
+      final analysisState = StrategyAnalysisState.resolve(
+        enabledStrategyCount: _allStrategyScores?.length ?? 0,
+        cards: cards,
+        error: _strategyAnalysisError,
+      );
+      return _buildStrategyAnalysisState(
+        icon: analysisState.status == StrategyAnalysisStatus.calculationError
+            ? Icons.error_outline
+            : Icons.layers_clear_outlined,
+        title: analysisState.title,
+        message: analysisState.message,
+      );
     }
 
     return Column(
@@ -853,17 +966,66 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
             AppTheme.pagePadding,
             8,
           ),
-          child: Text('信号卡片', style: AppTextStyles.h2),
+          child: Text('策略分析', style: AppTextStyles.h2),
         ),
         ...cards.map(
           (card) => SignalCardWidget(
             card: card,
-            onTap: () {
-              // Keep current behavior simple: signal card is informational.
-            },
+            onTap: () => context.push(
+              '/strategy/${card.strategyId}/backtest',
+              extra: {
+                'strategyName': card.strategyName,
+                'stockCode': widget.code,
+                'stockName': widget.name,
+                'market': widget.market,
+              },
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStrategyAnalysisState({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Container(
+      key: const Key('strategy-analysis-state'),
+      margin: const EdgeInsets.fromLTRB(
+        AppTheme.pagePadding,
+        16,
+        AppTheme.pagePadding,
+        0,
+      ),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.sc.bgSecondary,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: context.sc.textTertiary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTextStyles.h3),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: AppTextStyles.caption.copyWith(
+                    color: context.sc.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -974,7 +1136,7 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('基础信息', style: AppTextStyles.h3),
+          const Text('行情信息', style: AppTextStyles.h3),
           const SizedBox(height: 8),
           _buildInfoRow('代码', quote.fullCode),
           _buildInfoRow('今开', Formatters.formatPriceLarge(quote.openPrice)),
@@ -986,6 +1148,99 @@ class _StockDetailPageState extends ConsumerState<StockDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildFundamentalsSection() {
+    if (_fundamentalsLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 12, bottom: 16),
+        child: DetailSectionSkeleton(height: 260),
+      );
+    }
+
+    final fundamentals = _fundamentals;
+    if (fundamentals != null) {
+      return StockFundamentalsCard(fundamentals: fundamentals, klines: _klines);
+    }
+
+    if (!StockMarket.isAShare(widget.market)) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.pagePadding,
+          12,
+          AppTheme.pagePadding,
+          16,
+        ),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: context.sc.bgSecondary,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              size: 19,
+              color: context.sc.textTertiary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '公司基本面资料目前优先支持A股，${StockMarket.displayLabel(widget.market)}市场数据正在补充。',
+                style: AppTextStyles.caption.copyWith(
+                  color: context.sc.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_fundamentalsError) {
+      return Container(
+        key: const ValueKey('stock-fundamentals-error'),
+        margin: const EdgeInsets.fromLTRB(
+          AppTheme.pagePadding,
+          12,
+          AppTheme.pagePadding,
+          16,
+        ),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: context.sc.bgSecondary,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.cloud_off_outlined,
+              size: 20,
+              color: context.sc.textTertiary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('公司资料暂未加载', style: AppTextStyles.h3),
+                  const SizedBox(height: 3),
+                  Text(
+                    '行情和策略分析不受影响，可稍后单独重试。',
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.sc.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            TextButton(onPressed: _loadFundamentals, child: const Text('重试')),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildInfoRow(String label, String value) {

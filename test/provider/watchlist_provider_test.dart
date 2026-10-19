@@ -227,4 +227,42 @@ void main() {
       await db.close();
     });
   });
+
+  group('T-F017-2: 搜索结果关注双向切换', () {
+    test('未关注股票首次切换后加入关注，再次切换后取消关注', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final watchlistService = WatchlistService(db: db, seedDefaults: false);
+      final analysisEngine = AnalysisEngine();
+      final notifier = WatchlistNotifier(
+        watchlistService,
+        FakeKlineApiService(),
+        analysisEngine,
+        StrategyService(db: db),
+        StrategyScoringService(analysisEngine),
+      );
+
+      await notifier.initialize();
+
+      final addResult = await notifier.toggleWatchlist('002472', '双环传动', 'SZ');
+      expect(addResult, WatchlistToggleResult.added);
+      expect(
+        notifier.state.items.map((item) => item.stockCode),
+        contains('002472'),
+      );
+      expect(notifier.state.isAdding, false);
+
+      final removeResult = await notifier.toggleWatchlist(
+        '002472',
+        '双环传动',
+        'SZ',
+      );
+      expect(removeResult, WatchlistToggleResult.removed);
+      expect(notifier.state.items, isEmpty);
+      expect(notifier.state.isAdding, false);
+
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      notifier.dispose();
+      await db.close();
+    });
+  });
 }

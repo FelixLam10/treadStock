@@ -134,6 +134,7 @@ class _SettingsPanelState extends ConsumerState<_SettingsPanel> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final appPlatform = ref.watch(appPlatformServiceProvider);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 600;
 
@@ -183,6 +184,20 @@ class _SettingsPanelState extends ConsumerState<_SettingsPanel> {
                       onTap: _toggleSection,
                       child: const _AboutContent(),
                     ),
+                    if (appPlatform.supportsPwa)
+                      _AccordionItem(
+                        id: 'install',
+                        title: '安装与更新',
+                        icon: Icons.install_mobile_outlined,
+                        trailingText: appPlatform.isStandalone ? '已安装' : null,
+                        expanded: _expandedSection == 'install',
+                        onTap: _toggleSection,
+                        child: _InstallContent(
+                          isStandalone: appPlatform.isStandalone,
+                          isIosSafari: appPlatform.isIosSafari,
+                          onReload: appPlatform.applyUpdate,
+                        ),
+                      ),
                     _AccordionItem(
                       id: 'theme',
                       title: '主题',
@@ -531,6 +546,56 @@ class _ThemeContent extends StatelessWidget {
   }
 }
 
+class _InstallContent extends StatelessWidget {
+  final bool isStandalone;
+  final bool isIosSafari;
+  final VoidCallback onReload;
+
+  const _InstallContent({
+    required this.isStandalone,
+    required this.isIosSafari,
+    required this.onReload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final installText = isStandalone
+        ? '已从主屏幕独立运行。'
+        : isIosSafari
+        ? '点击 Safari 底部“分享”，选择“添加到主屏幕”。'
+        : '请使用 iPhone Safari 打开本页，再添加到主屏幕。';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.sc.bgSecondary,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            installText,
+            style: AppTextStyles.caption.copyWith(
+              color: context.sc.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onReload,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('重新加载最新版本'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CacheContent extends StatelessWidget {
   final bool isClearing;
   final VoidCallback? onClear;
@@ -550,7 +615,7 @@ class _CacheContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '清理本地 K 线缓存，不会删除关注列表和策略配置。',
+            '清理本地 K 线和推荐行情缓存，不会删除关注列表和策略配置。',
             style: AppTextStyles.caption.copyWith(
               color: context.sc.textSecondary,
               height: 1.5,

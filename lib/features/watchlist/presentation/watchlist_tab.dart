@@ -63,22 +63,43 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
     setState(() {});
   }
 
-  /// Handle adding a search result to watchlist.
-  /// Does NOT clear search — refreshes in-place so user can continue adding.
-  Future<void> _handleAddSearchResult(
+  /// Toggle a search result in the watchlist without clearing the search.
+  Future<void> _handleToggleSearchResult(
     WatchlistNotifier notifier,
     String code,
     String name,
     String market,
   ) async {
-    final success = await notifier.addToWatchlist(code, name, market);
+    final result = await notifier.toggleWatchlist(code, name, market);
     if (!mounted) return;
-    if (success) {
-      ToastHelper.showSuccess(context, '已添加$name到关注列表');
-      // Don't clear search — let user continue adding multiple stocks.
-      // The watched status updates reactively via ref.watch(watchedCodesProvider).
-    } else {
-      ToastHelper.showError(context, '添加失败，请重试');
+
+    switch (result) {
+      case WatchlistToggleResult.added:
+        ToastHelper.showSuccess(context, '已添加$name到关注列表');
+        break;
+      case WatchlistToggleResult.removed:
+        ToastHelper.showWithAction(
+          context,
+          '已取消关注$name',
+          actionText: '撤销',
+          onAction: () async {
+            final undoResult = await notifier.toggleWatchlist(
+              code,
+              name,
+              market,
+            );
+            if (!mounted) return;
+            if (undoResult == WatchlistToggleResult.added) {
+              ToastHelper.showSuccess(context, '已恢复关注$name');
+            } else {
+              ToastHelper.showError(context, '恢复关注失败，请重试');
+            }
+          },
+        );
+        break;
+      case WatchlistToggleResult.failed:
+        ToastHelper.showError(context, '操作失败，请重试');
+        break;
     }
   }
 
@@ -277,7 +298,7 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
               8,
             ),
             child: Text(
-              '点击关注即可添加到关注列表',
+              '点击右侧按钮可关注或取消关注',
               style: AppTextStyles.caption.copyWith(
                 color: context.sc.textTertiary,
               ),
@@ -288,12 +309,13 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
         final result = results[index - 1];
         // Use reactive watchedCodes instead of notifier.isWatched
         final isWatched = watchedCodes.contains(result.code);
-        final isAdding = state.isAdding && state.addingCode == result.code;
+        final isMutating = state.isAdding && state.addingCode == result.code;
 
         return InkWell(
-          onTap: isWatched || isAdding
+          key: ValueKey('search-watch-toggle-${result.code}'),
+          onTap: isMutating
               ? null
-              : () => _handleAddSearchResult(
+              : () => _handleToggleSearchResult(
                   notifier,
                   result.code,
                   result.name,
@@ -318,14 +340,14 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
                       Text(result.name, style: AppTextStyles.bodyLg),
                       const SizedBox(height: 2),
                       Text(
-                        '${result.code} ${result.market}',
+                        '${result.code} ${result.displayMarket}',
                         style: AppTextStyles.caption,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                if (isAdding)
+                if (isMutating)
                   const SizedBox(
                     width: 16,
                     height: 16,
@@ -342,14 +364,14 @@ class _WatchlistTabState extends ConsumerState<WatchlistTab> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: StockColors.success.withValues(alpha: 0.12),
+                      color: StockColors.danger.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                     ),
                     child: const Text(
-                      '✓ 已关注',
+                      '取消关注',
                       style: TextStyle(
                         fontSize: 13,
-                        color: StockColors.success,
+                        color: StockColors.danger,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

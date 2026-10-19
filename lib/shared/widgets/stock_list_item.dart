@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import 'score_badge.dart';
 import 'band_low_tag.dart';
 import '../../features/analysis/domain/analysis_models.dart';
+import '../../features/stock/domain/stock_models.dart';
 import 'decision_labels/decision_labels.dart';
 import 'decision_labels/decision_label_chip.dart' as chip;
 import '../../features/strategy/domain/decision_engine.dart';
@@ -115,7 +116,9 @@ class StockListItem extends StatelessWidget {
 
                 // Price (right-aligned, number font)
                 Text(
-                  price > 0 ? '¥${price.toStringAsFixed(2)}' : '--',
+                  price > 0
+                      ? '${StockMarket.currencySymbol(market)}${price.toStringAsFixed(2)}'
+                      : '--',
                   style: AppTextStyles.numberSm.copyWith(
                     color: context.sc.textPrimary,
                   ),
@@ -144,15 +147,19 @@ class StockListItem extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
-                        '$code ${market == "SH" ? 'SH' : 'SZ'}',
+                        '$code ${StockMarket.displayLabel(market)}',
                         style: AppTextStyles.caption,
                       ),
                       if (score != null) ScoreBadge(score: score),
                       if (decisionResult != null)
-                        DecisionSignalBadge(signal: decisionResult!.signal, isSmall: true),
+                        DecisionSignalBadge(
+                          signal: decisionResult!.signal,
+                          isSmall: true,
+                        ),
                       if (isBandLow) const BandLowTag(),
                       _buildDecisionLabelWidget(stockScore),
-                      if (prediction != null) _PredictionTag(prediction: prediction!),
+                      if (prediction != null)
+                        _PredictionTag(prediction: prediction!),
                       if (expectedRange != null)
                         Text(
                           expectedRange!,
@@ -198,10 +205,7 @@ class _AnimatedWatchButton extends StatefulWidget {
   final bool isWatched;
   final VoidCallback? onTap;
 
-  const _AnimatedWatchButton({
-    required this.isWatched,
-    this.onTap,
-  });
+  const _AnimatedWatchButton({required this.isWatched, this.onTap});
 
   @override
   State<_AnimatedWatchButton> createState() => _AnimatedWatchButtonState();
@@ -227,7 +231,6 @@ class _AnimatedWatchButtonState extends State<_AnimatedWatchButton>
         reverseCurve: Curves.easeIn,
       ),
     );
-
   }
 
   @override
@@ -251,8 +254,9 @@ class _AnimatedWatchButtonState extends State<_AnimatedWatchButton>
     final bgColor = widget.isWatched
         ? StockColors.success.withValues(alpha: 0.12)
         : StockColors.brand.withValues(alpha: 0.1);
-    final textColor =
-        widget.isWatched ? StockColors.success : StockColors.brand;
+    final textColor = widget.isWatched
+        ? StockColors.success
+        : StockColors.brand;
     final label = widget.isWatched ? '✓ 已关注' : '关注';
 
     return GestureDetector(
@@ -319,8 +323,6 @@ class _StrategySummaryLine extends StatelessWidget {
   }
 }
 
-
-
 Widget _buildDecisionLabelWidget(StockScore? stockScore) {
   if (stockScore == null || stockScore.score <= 0) {
     return const SizedBox.shrink();
@@ -336,6 +338,7 @@ Widget _buildDecisionLabelWidget(StockScore? stockScore) {
     sentiment: _toChipSentiment(label.sentiment),
   );
 }
+
 /// Convert model sentiment to widget sentiment.
 chip.DecisionSentiment _toChipSentiment(DecisionSentiment s) {
   switch (s) {

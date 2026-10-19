@@ -8,6 +8,8 @@ import '../../strategy/domain/strategy_scoring_service.dart';
 import '../../watchlist/data/watchlist_service.dart';
 import '../../../shared/providers.dart';
 
+enum WatchlistToggleResult { added, removed, failed }
+
 /// State for watchlist.
 class WatchlistState {
   final List<WatchlistItem> items;
@@ -141,6 +143,35 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
     } catch (e) {
       state = state.copyWith(isAdding: false, addingCode: null);
       return false;
+    }
+  }
+
+  /// Toggle a search result in or out of the watchlist.
+  ///
+  /// Search results use one action in both directions, so this method keeps
+  /// the database lookup, mutation state and result reporting in one place.
+  Future<WatchlistToggleResult> toggleWatchlist(
+    String stockCode,
+    String stockName,
+    String market,
+  ) async {
+    await _watchlistService.init();
+    final existing = _watchlistService.findByCode(stockCode);
+
+    if (existing == null) {
+      final added = await addToWatchlist(stockCode, stockName, market);
+      return added ? WatchlistToggleResult.added : WatchlistToggleResult.failed;
+    }
+
+    state = state.copyWith(isAdding: true, addingCode: stockCode);
+    try {
+      await _watchlistService.removeFromWatchlist(existing.id);
+      reload();
+      state = state.copyWith(isAdding: false, addingCode: null);
+      return WatchlistToggleResult.removed;
+    } catch (_) {
+      state = state.copyWith(isAdding: false, addingCode: null);
+      return WatchlistToggleResult.failed;
     }
   }
 
