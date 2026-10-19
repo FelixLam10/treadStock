@@ -29,6 +29,26 @@ enum SignalStrength {
   const SignalStrength(this.label, this.level);
 }
 
+enum StrategyAnalysisResultStatus {
+  matched('符合'),
+  close('接近'),
+  noMatch('不符合'),
+  insufficientData('数据不足'),
+  calculationError('计算失败');
+
+  final String label;
+  const StrategyAnalysisResultStatus(this.label);
+}
+
+enum StrategySampleStatus {
+  none('暂无复盘样本'),
+  insufficient('复盘样本不足'),
+  reviewable('已有可复盘样本');
+
+  final String label;
+  const StrategySampleStatus(this.label);
+}
+
 /// A single indicator highlight on the signal card.
 class IndicatorHighlight {
   final String name; // e.g. 'RSI', 'MACD'
@@ -79,6 +99,15 @@ class SignalCard {
   /// Current indicator values used in evaluation.
   final Map<String, double> indicatorValues;
 
+  /// Human-readable state-machine progress for multi-day or environment rules.
+  final List<String> ruleProgress;
+
+  final StrategyAnalysisResultStatus resultStatus;
+  final StrategySampleStatus sampleStatus;
+  final int sampleCount;
+  final int? strategyVersion;
+  final DateTime? strategyUpdatedAt;
+
   /// Timestamp of the evaluation.
   final DateTime evaluatedAt;
 
@@ -102,6 +131,12 @@ class SignalCard {
     required this.ruleResults,
     required this.indicatorValues,
     required this.evaluatedAt,
+    this.ruleProgress = const [],
+    this.resultStatus = StrategyAnalysisResultStatus.noMatch,
+    this.sampleStatus = StrategySampleStatus.none,
+    this.sampleCount = 0,
+    this.strategyVersion,
+    this.strategyUpdatedAt,
     this.currentPrice,
     this.changePct,
   });
@@ -117,7 +152,8 @@ class SignalCard {
       totalRuleCount == 0 ? 0 : passedRuleCount / totalRuleCount;
 
   /// Whether this card has any actionable signal.
-  bool get isActionable => type != SignalType.neutral && strength != SignalStrength.none;
+  bool get isActionable =>
+      type != SignalType.neutral && strength != SignalStrength.none;
 
   /// Short display string for the signal type + strength.
   String get tag {

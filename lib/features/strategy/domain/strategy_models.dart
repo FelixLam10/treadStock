@@ -165,11 +165,21 @@ class Strategy {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
-    if (lastReviewAt != null) data['lastReviewAt'] = lastReviewAt!.toIso8601String();
-    if (entryRules != null) data['entryRules'] = entryRules!.map((r) => r.toJson()).toList();
-    if (exitRules != null) data['exitRules'] = exitRules!.map((r) => r.toJson()).toList();
-    if (entryGroups != null) data['entryGroups'] = entryGroups!.map((g) => g.toJson()).toList();
-    if (exitGroups != null) data['exitGroups'] = exitGroups!.map((g) => g.toJson()).toList();
+    if (lastReviewAt != null) {
+      data['lastReviewAt'] = lastReviewAt!.toIso8601String();
+    }
+    if (entryRules != null) {
+      data['entryRules'] = entryRules!.map((r) => r.toJson()).toList();
+    }
+    if (exitRules != null) {
+      data['exitRules'] = exitRules!.map((r) => r.toJson()).toList();
+    }
+    if (entryGroups != null) {
+      data['entryGroups'] = entryGroups!.map((g) => g.toJson()).toList();
+    }
+    if (exitGroups != null) {
+      data['exitGroups'] = exitGroups!.map((g) => g.toJson()).toList();
+    }
     if (stockFilter != null && stockFilter!.isActive) {
       data['stockFilter'] = stockFilter!.toJson();
     }
@@ -199,16 +209,24 @@ class Strategy {
           ? DateTime.parse(json['lastReviewAt'] as String)
           : null,
       entryRules: json['entryRules'] != null
-          ? (json['entryRules'] as List).map((e) => SignalRule.fromJson(e as Map<String, dynamic>)).toList()
+          ? (json['entryRules'] as List)
+                .map((e) => SignalRule.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       exitRules: json['exitRules'] != null
-          ? (json['exitRules'] as List).map((e) => SignalRule.fromJson(e as Map<String, dynamic>)).toList()
+          ? (json['exitRules'] as List)
+                .map((e) => SignalRule.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       entryGroups: json['entryGroups'] != null
-          ? (json['entryGroups'] as List).map((e) => RuleGroup.fromJson(e as Map<String, dynamic>)).toList()
+          ? (json['entryGroups'] as List)
+                .map((e) => RuleGroup.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       exitGroups: json['exitGroups'] != null
-          ? (json['exitGroups'] as List).map((e) => RuleGroup.fromJson(e as Map<String, dynamic>)).toList()
+          ? (json['exitGroups'] as List)
+                .map((e) => RuleGroup.fromJson(e as Map<String, dynamic>))
+                .toList()
           : null,
       stockFilter: json['stockFilter'] != null
           ? StockFilter.fromJson(json['stockFilter'] as Map<String, dynamic>)
@@ -432,6 +450,9 @@ class ApiStrategyTemplate {
   final String apiSource;
   final List<String> apiCapabilities;
   final List<String> requiredFields;
+  final String coreTheory;
+  final List<String> practiceNotes;
+  final String riskNote;
   final StrategyFormData formData;
 
   const ApiStrategyTemplate({
@@ -441,6 +462,9 @@ class ApiStrategyTemplate {
     required this.apiSource,
     required this.apiCapabilities,
     required this.requiredFields,
+    this.coreTheory = '',
+    this.practiceNotes = const [],
+    this.riskNote = '',
     required this.formData,
   });
 }
@@ -514,6 +538,140 @@ class ApiStrategyTemplates {
         weightVol: 0.35,
         weightTrend: 0.25,
         recommendThreshold: 6,
+      ),
+    ),
+    ApiStrategyTemplate(
+      id: 'ladder_platform_breakout',
+      name: '梯级平台突破观察',
+      description: '把上涨中的整理平台视为一级台阶，观察平台能否逐级抬高，并在放量突破后继续保持结构。',
+      apiSource: '东方财富前复权日K；全部结构只使用当日及此前已完成K线',
+      apiCapabilities: ['日K线', '平台高低点', '成交量', '均线趋势'],
+      requiredFields: ['close', 'high', 'low', 'volume'],
+      coreTheory: '趋势并非直线上升，而常表现为推进、整理、再推进。较高平台说明价格重心抬升，突破用于确认新一段推进。',
+      practiceNotes: [
+        '先确认两个已完成平台的中点和低点均抬高。',
+        '最新平台振幅不超过 10%，收盘突破平台高点 0.5% 以上。',
+        '量比大于 1.2 且短期均线环境向上时才记录观察信号。',
+      ],
+      riskNote: '单边下跌中的短暂横盘也可能伪装成台阶；跌回近期平台或短期均线下方时视为结构失效。',
+      formData: StrategyFormData(
+        name: '梯级平台突破观察',
+        description: '平台逐级抬高 + 区间收敛 + 放量突破；跌回平台或短期均线视为失效',
+        maShortPeriod: 10,
+        maLongPeriod: 60,
+        weightMA: 0.35,
+        weightBoll: 0.05,
+        weightVol: 0.25,
+        weightTrend: 0.35,
+        recommendThreshold: 7,
+        isRuleBased: true,
+        entryRules: [
+          SignalRule(
+            indicator: 'market_environment',
+            condition: 'uptrend',
+            value: 0.15,
+            lookbackDays: 5,
+          ),
+          SignalRule(indicator: 'ladder_breakout', condition: 'gt', value: 0.5),
+          SignalRule(indicator: 'vol_ratio', condition: 'gt', value: 1.2),
+        ],
+        exitRules: [
+          SignalRule(
+            indicator: 'ladder_support_gap_pct',
+            condition: 'lt',
+            value: 0,
+          ),
+          SignalRule(indicator: 'price_ma_short', condition: 'below', value: 0),
+        ],
+      ),
+    ),
+    ApiStrategyTemplate(
+      id: 'moving_average_trend_confirmation',
+      name: '均线趋势确认',
+      description: '用短长均线交叉识别趋势切换，再用均线斜率和量能过滤震荡期的反复信号。',
+      apiSource: '东方财富前复权日K；MA5/MA20 与量比均在本地计算',
+      apiCapabilities: ['日K线', 'MA5', 'MA20', '均线斜率', '成交量'],
+      requiredFields: ['close', 'volume'],
+      coreTheory: '均线是价格的平滑结果。短期均线上穿长期均线表示近期价格重心改善，但必须结合方向、位置和量能，而不是孤立使用交叉。',
+      practiceNotes: [
+        'MA5 上穿 MA20 只作为触发，MA5 自身斜率需保持向上。',
+        '量比大于 0.8，避免把明显缩量的偶发穿越当作确认。',
+        'MA5 再次下穿 MA20 时记录结构失效。',
+      ],
+      riskNote: '均线天然滞后，横盘阶段容易连续出现假交叉；测试时应同时关注交易次数、回撤和费用。',
+      formData: StrategyFormData(
+        name: '均线趋势确认',
+        description: 'MA5 上穿 MA20 + 均线斜率向上 + 量能过滤；反向交叉视为失效',
+        maShortPeriod: 5,
+        maLongPeriod: 20,
+        weightMA: 0.45,
+        weightBoll: 0.05,
+        weightVol: 0.15,
+        weightTrend: 0.35,
+        recommendThreshold: 7,
+        isRuleBased: true,
+        entryRules: [
+          SignalRule(
+            indicator: 'market_environment',
+            condition: 'uptrend',
+            value: 0.15,
+            lookbackDays: 5,
+          ),
+          SignalRule(
+            indicator: 'ma_short',
+            condition: 'indicator_cross_up',
+            value: 0,
+            indicator2: 'ma_long',
+          ),
+          SignalRule(indicator: 'vol_ratio', condition: 'gt', value: 0.8),
+        ],
+        exitRules: [
+          SignalRule(
+            indicator: 'ma_short',
+            condition: 'indicator_cross_down',
+            value: 0,
+            indicator2: 'ma_long',
+          ),
+        ],
+      ),
+    ),
+    ApiStrategyTemplate(
+      id: 'simplified_chan_third_buy',
+      name: '简化缠论三买观察',
+      description: '用可复现的固定窗口近似中枢，观察向上离开后回抽不回中枢的结构线索。',
+      apiSource: '东方财富前复权日K；固定窗口中枢与离开/回抽结构在本地计算',
+      apiCapabilities: ['日K线', '区间重叠', '中枢上沿', '离开与回抽'],
+      requiredFields: ['close', 'high', 'low'],
+      coreTheory: '缠论强调级别、走势中枢和走势类型。第三类观察点的核心，是价格离开中枢后回抽仍未重新进入中枢。',
+      practiceNotes: [
+        '首版用三个 8 日区间的共同重叠部分近似中枢。',
+        '随后窗口需向上离开中枢上沿 1% 以上。',
+        '最近 3 日出现回抽，但最低价仍守在中枢上沿附近之外。',
+      ],
+      riskNote: '这是便于回测的简化模型，不等同于完整的分型、笔、线段和多级别递归缠论；结果只适合学习与复盘。',
+      formData: StrategyFormData(
+        name: '简化缠论三买观察',
+        description: '固定窗口近似中枢 + 向上离开 + 回抽不回中枢；仅用于结构学习与回测',
+        maShortPeriod: 10,
+        maLongPeriod: 20,
+        weightMA: 0.25,
+        weightBoll: 0.10,
+        weightVol: 0.15,
+        weightTrend: 0.50,
+        recommendThreshold: 7,
+        isRuleBased: true,
+        entryRules: [
+          SignalRule(indicator: 'chan_third_buy', condition: 'gt', value: 0.5),
+          SignalRule(indicator: 'price_ma_long', condition: 'above', value: 0),
+        ],
+        exitRules: [
+          SignalRule(
+            indicator: 'chan_center_support_gap_pct',
+            condition: 'lt',
+            value: 0,
+          ),
+          SignalRule(indicator: 'price_ma_long', condition: 'below', value: 0),
+        ],
       ),
     ),
   ];
@@ -630,8 +788,15 @@ JSON schema：
   "weightVol": 0.0-1.0,
   "weightTrend": 0.0-1.0,
   "recommendThreshold": 1-10 的整数,
+  "entryRules": "可选，支持 price_ma_short/price_ma_long 的多日确认和 market_environment 环境过滤",
+  "exitRules": "可选，与 entryRules 格式相同",
   "notes": "可选，说明映射依据，不参与评分"
 }
+
+多日规则示例：
+{"indicator":"price_ma_short","condition":"cross_up_confirmed","value":0,"confirmationDays":2}
+横盘过滤示例：
+{"indicator":"market_environment","condition":"uptrend","value":0.15,"lookbackDays":5}
 
 约束：
 - 四个权重之和必须等于 1.0。
@@ -652,6 +817,18 @@ JSON schema：
   }
 
   static StrategyFormData fromJson(Map<String, dynamic> json) {
+    List<SignalRule> parseRules(String key) {
+      final value = json[key];
+      if (value == null) return [];
+      if (value is! List) throw FormatException('字段 $key 必须是数组');
+      return value
+          .map(
+            (item) =>
+                SignalRule.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
+    }
+
     final form = StrategyFormData(
       name: _string(json, 'name'),
       description: _string(json, 'description', required: false),
@@ -664,6 +841,9 @@ JSON schema：
       weightVol: _double(json, 'weightVol'),
       weightTrend: _double(json, 'weightTrend'),
       recommendThreshold: _int(json, 'recommendThreshold'),
+      isRuleBased: json['entryRules'] != null || json['exitRules'] != null,
+      entryRules: parseRules('entryRules'),
+      exitRules: parseRules('exitRules'),
     );
 
     final error = form.validate();
@@ -751,10 +931,10 @@ class StrategyFormData {
     List<RuleGroup>? entryGroups,
     List<RuleGroup>? exitGroups,
     this.stockFilter,
-  })  : entryRules = entryRules ?? [],
-        exitRules = exitRules ?? [],
-        entryGroups = entryGroups ?? [],
-        exitGroups = exitGroups ?? [];
+  }) : entryRules = entryRules ?? [],
+       exitRules = exitRules ?? [],
+       entryGroups = entryGroups ?? [],
+       exitGroups = exitGroups ?? [];
 
   /// Create from an existing Strategy (for editing).
   factory StrategyFormData.fromStrategy(Strategy strategy) {

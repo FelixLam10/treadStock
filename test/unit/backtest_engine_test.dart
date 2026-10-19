@@ -27,16 +27,18 @@ List<DailyKline> _generateKlines({
     // Use business days starting from 2025-01-02
     final date = DateTime(2025, 1, 2).add(Duration(days: i));
 
-    klines.add(DailyKline(
-      date: date,
-      open: price * (1 - volatility / 4),
-      close: price,
-      high: high,
-      low: low,
-      volume: 100000 + (i % 10) * 10000,
-      amount: price * 100000,
-      preClose: i > 0 ? klines[i - 1].close : price,
-    ));
+    klines.add(
+      DailyKline(
+        date: date,
+        open: price * (1 - volatility / 4),
+        close: price,
+        high: high,
+        low: low,
+        volume: 100000 + (i % 10) * 10000,
+        amount: price * 100000,
+        preClose: i > 0 ? klines[i - 1].close : price,
+      ),
+    );
   }
   return klines;
 }
@@ -127,6 +129,24 @@ void main() {
       expect(result.startDate, isNotNull);
       expect(result.endDate, isNotNull);
     });
+
+    test('does not record zero-share trades when one lot is unaffordable', () {
+      final klines = _generateKlines(
+        count: 200,
+        startPrice: 1500,
+        trendPct: 0.5,
+      );
+      final result = engine.run(
+        klines: klines,
+        strategy: _weightedStrategy(threshold: 1),
+        config: const BacktestConfig(initialCapital: 100000),
+        stockCode: '600519',
+        analysisEngine: analysisEngine,
+      );
+
+      expect(result.totalTrades, 0);
+      expect(result.trades, isEmpty);
+    });
   });
 
   group('BacktestEngine - weighted strategy', () {
@@ -162,7 +182,11 @@ void main() {
       );
 
       // Generate data with a dip to trigger RSI oversold
-      final klines = _generateKlines(count: 200, trendPct: -0.3, volatility: 0.05);
+      final klines = _generateKlines(
+        count: 200,
+        trendPct: -0.3,
+        volatility: 0.05,
+      );
       final result = engine.run(
         klines: klines,
         strategy: strategy,
@@ -209,7 +233,11 @@ void main() {
   group('BacktestEngine - stop loss / take profit', () {
     test('stop loss triggers correctly', () {
       // Use a very tight stop loss (-1%)
-      final klines = _generateKlines(count: 200, trendPct: 0.0, volatility: 0.03);
+      final klines = _generateKlines(
+        count: 200,
+        trendPct: 0.0,
+        volatility: 0.03,
+      );
       final result = engine.run(
         klines: klines,
         strategy: _weightedStrategy(threshold: 5),
@@ -231,7 +259,11 @@ void main() {
     });
 
     test('take profit triggers correctly', () {
-      final klines = _generateKlines(count: 200, trendPct: 0.5, volatility: 0.03);
+      final klines = _generateKlines(
+        count: 200,
+        trendPct: 0.5,
+        volatility: 0.03,
+      );
       final result = engine.run(
         klines: klines,
         strategy: _weightedStrategy(threshold: 5),
@@ -406,7 +438,7 @@ void main() {
         strategyName: 'test',
         stockCode: '000001',
         trades: [],
-        totalTrades: 10,
+        totalTrades: 20,
         winRate: 0.7,
         profitFactor: 2.0,
       );
@@ -418,7 +450,7 @@ void main() {
         strategyName: 'test',
         stockCode: '000001',
         trades: [],
-        totalTrades: 10,
+        totalTrades: 20,
         winRate: 0.5,
         profitFactor: 1.2,
       );
@@ -430,7 +462,7 @@ void main() {
         strategyName: 'test',
         stockCode: '000001',
         trades: [],
-        totalTrades: 10,
+        totalTrades: 20,
         winRate: 0.3,
         profitFactor: 0.5,
       );
@@ -440,7 +472,11 @@ void main() {
 
   group('BacktestEngine - maxTrades limit', () {
     test('respects maxTrades configuration', () {
-      final klines = _generateKlines(count: 300, trendPct: 0.5, volatility: 0.03);
+      final klines = _generateKlines(
+        count: 300,
+        trendPct: 0.5,
+        volatility: 0.03,
+      );
       final unlimited = engine.run(
         klines: klines,
         strategy: _weightedStrategy(threshold: 5),

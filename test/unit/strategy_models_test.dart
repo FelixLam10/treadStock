@@ -27,6 +27,31 @@ void main() {
       expect(template.formData.name, template.name);
       expect(generated.name, '用户改名策略');
     });
+
+    test(
+      'three theory templates include executable rules and learning copy',
+      () {
+        const ids = {
+          'ladder_platform_breakout',
+          'moving_average_trend_confirmation',
+          'simplified_chan_third_buy',
+        };
+        final templates = ApiStrategyTemplates.all
+            .where((template) => ids.contains(template.id))
+            .toList();
+
+        expect(templates, hasLength(3));
+        for (final template in templates) {
+          expect(template.coreTheory, isNotEmpty, reason: template.id);
+          expect(template.practiceNotes, isNotEmpty, reason: template.id);
+          expect(template.riskNote, isNotEmpty, reason: template.id);
+          expect(template.formData.isRuleBased, isTrue, reason: template.id);
+          expect(template.formData.entryRules, isNotEmpty, reason: template.id);
+          expect(template.formData.exitRules, isNotEmpty, reason: template.id);
+          expect(template.formData.validate(), isNull, reason: template.id);
+        }
+      },
+    );
   });
 
   group('StrategyLearningGoals', () {
@@ -399,22 +424,44 @@ void main() {
   group('Strategy signal rules', () {
     test('isRuleBased returns false when entryRules is null', () {
       final strategy = Strategy(
-        id: 'test', name: 'Test', description: '',
-        maShortPeriod: 20, maLongPeriod: 60, bollPeriod: 20, bollStdDev: 2.0,
-        weightMA: 0.3, weightBoll: 0.3, weightVol: 0.2, weightTrend: 0.2,
-        recommendThreshold: 7, isEnabled: true, isDefault: false,
-        createdAt: DateTime(2026), updatedAt: DateTime(2026),
+        id: 'test',
+        name: 'Test',
+        description: '',
+        maShortPeriod: 20,
+        maLongPeriod: 60,
+        bollPeriod: 20,
+        bollStdDev: 2.0,
+        weightMA: 0.3,
+        weightBoll: 0.3,
+        weightVol: 0.2,
+        weightTrend: 0.2,
+        recommendThreshold: 7,
+        isEnabled: true,
+        isDefault: false,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
       );
       expect(strategy.isRuleBased, isFalse);
     });
 
     test('isRuleBased returns false when entryRules is empty', () {
       final strategy = Strategy(
-        id: 'test', name: 'Test', description: '',
-        maShortPeriod: 20, maLongPeriod: 60, bollPeriod: 20, bollStdDev: 2.0,
-        weightMA: 0.3, weightBoll: 0.3, weightVol: 0.2, weightTrend: 0.2,
-        recommendThreshold: 7, isEnabled: true, isDefault: false,
-        createdAt: DateTime(2026), updatedAt: DateTime(2026),
+        id: 'test',
+        name: 'Test',
+        description: '',
+        maShortPeriod: 20,
+        maLongPeriod: 60,
+        bollPeriod: 20,
+        bollStdDev: 2.0,
+        weightMA: 0.3,
+        weightBoll: 0.3,
+        weightVol: 0.2,
+        weightTrend: 0.2,
+        recommendThreshold: 7,
+        isEnabled: true,
+        isDefault: false,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
         entryRules: [],
       );
       expect(strategy.isRuleBased, isFalse);
@@ -422,11 +469,22 @@ void main() {
 
     test('isRuleBased returns true when entryRules has rules', () {
       final strategy = Strategy(
-        id: 'test', name: 'Test', description: '',
-        maShortPeriod: 20, maLongPeriod: 60, bollPeriod: 20, bollStdDev: 2.0,
-        weightMA: 0.3, weightBoll: 0.3, weightVol: 0.2, weightTrend: 0.2,
-        recommendThreshold: 7, isEnabled: true, isDefault: false,
-        createdAt: DateTime(2026), updatedAt: DateTime(2026),
+        id: 'test',
+        name: 'Test',
+        description: '',
+        maShortPeriod: 20,
+        maLongPeriod: 60,
+        bollPeriod: 20,
+        bollStdDev: 2.0,
+        weightMA: 0.3,
+        weightBoll: 0.3,
+        weightVol: 0.2,
+        weightTrend: 0.2,
+        recommendThreshold: 7,
+        isEnabled: true,
+        isDefault: false,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
         entryRules: [SignalRule(indicator: 'rsi', condition: 'lt', value: 30)],
       );
       expect(strategy.isRuleBased, isTrue);
@@ -434,11 +492,22 @@ void main() {
 
     test('JSON roundtrip preserves entryRules and exitRules', () {
       final strategy = Strategy(
-        id: 'test', name: 'Test', description: '',
-        maShortPeriod: 20, maLongPeriod: 60, bollPeriod: 20, bollStdDev: 2.0,
-        weightMA: 0.3, weightBoll: 0.3, weightVol: 0.2, weightTrend: 0.2,
-        recommendThreshold: 7, isEnabled: true, isDefault: false,
-        createdAt: DateTime(2026), updatedAt: DateTime(2026),
+        id: 'test',
+        name: 'Test',
+        description: '',
+        maShortPeriod: 20,
+        maLongPeriod: 60,
+        bollPeriod: 20,
+        bollStdDev: 2.0,
+        weightMA: 0.3,
+        weightBoll: 0.3,
+        weightVol: 0.2,
+        weightTrend: 0.2,
+        recommendThreshold: 7,
+        isEnabled: true,
+        isDefault: false,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
         entryRules: [SignalRule(indicator: 'rsi', condition: 'lt', value: 30)],
         exitRules: [SignalRule(indicator: 'rsi', condition: 'gt', value: 70)],
       );
@@ -452,11 +521,22 @@ void main() {
 
     test('Old JSON without rules fields deserializes correctly', () {
       final json = {
-        'id': 'test', 'name': 'Test', 'description': '',
-        'maShortPeriod': 20, 'maLongPeriod': 60, 'bollPeriod': 20, 'bollStdDev': 2.0,
-        'weightMA': 0.3, 'weightBoll': 0.3, 'weightVol': 0.2, 'weightTrend': 0.2,
-        'recommendThreshold': 7, 'isEnabled': true, 'isDefault': false,
-        'createdAt': '2026-01-01T00:00:00.000', 'updatedAt': '2026-01-01T00:00:00.000',
+        'id': 'test',
+        'name': 'Test',
+        'description': '',
+        'maShortPeriod': 20,
+        'maLongPeriod': 60,
+        'bollPeriod': 20,
+        'bollStdDev': 2.0,
+        'weightMA': 0.3,
+        'weightBoll': 0.3,
+        'weightVol': 0.2,
+        'weightTrend': 0.2,
+        'recommendThreshold': 7,
+        'isEnabled': true,
+        'isDefault': false,
+        'createdAt': '2026-01-01T00:00:00.000',
+        'updatedAt': '2026-01-01T00:00:00.000',
       };
       final strategy = Strategy.fromJson(json);
       expect(strategy.isRuleBased, isFalse);

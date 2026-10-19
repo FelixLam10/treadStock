@@ -16,7 +16,12 @@ void main() {
     });
 
     test('evaluate in_range condition checks inclusive bounds', () {
-      final rule = SignalRule(indicator: 'rsi', condition: 'in_range', value: 30, value2: 70);
+      final rule = SignalRule(
+        indicator: 'rsi',
+        condition: 'in_range',
+        value: 30,
+        value2: 70,
+      );
       expect(rule.evaluate(30), isTrue);
       expect(rule.evaluate(50), isTrue);
       expect(rule.evaluate(70), isTrue);
@@ -24,40 +29,60 @@ void main() {
       expect(rule.evaluate(71), isFalse);
     });
 
-    test('evaluate cross_up detects previous < threshold and current >= threshold', () {
-      final rule = SignalRule(indicator: 'macd', condition: 'cross_up', value: 0);
-      expect(rule.evaluateWithPrev(-0.5, 0.3), isTrue);
-      expect(rule.evaluateWithPrev(0.1, 0.3), isFalse);
-      expect(rule.evaluateWithPrev(-0.5, -0.1), isFalse);
-    });
+    test(
+      'evaluate cross_up detects previous < threshold and current >= threshold',
+      () {
+        final rule = SignalRule(
+          indicator: 'macd',
+          condition: 'cross_up',
+          value: 0,
+        );
+        expect(rule.evaluateWithPrev(-0.5, 0.3), isTrue);
+        expect(rule.evaluateWithPrev(0.1, 0.3), isFalse);
+        expect(rule.evaluateWithPrev(-0.5, -0.1), isFalse);
+      },
+    );
 
-    test('evaluate cross_down detects previous > threshold and current <= threshold', () {
-      final rule = SignalRule(indicator: 'macd', condition: 'cross_down', value: 0);
-      expect(rule.evaluateWithPrev(0.5, -0.3), isTrue);
-      expect(rule.evaluateWithPrev(-0.1, -0.3), isFalse);
-    });
+    test(
+      'evaluate cross_down detects previous > threshold and current <= threshold',
+      () {
+        final rule = SignalRule(
+          indicator: 'macd',
+          condition: 'cross_down',
+          value: 0,
+        );
+        expect(rule.evaluateWithPrev(0.5, -0.3), isTrue);
+        expect(rule.evaluateWithPrev(-0.1, -0.3), isFalse);
+      },
+    );
 
     test('fromJson / toJson roundtrip preserves all fields', () {
       final rule = SignalRule(
-        indicator: 'boll_position',
-        condition: 'lt',
-        value: 0.3,
+        indicator: 'price_ma_short',
+        condition: 'cross_up_confirmed',
+        value: 0,
         value2: null,
+        confirmationDays: 2,
+        lookbackDays: 7,
       );
       final json = rule.toJson();
       final restored = SignalRule.fromJson(json);
       expect(restored.indicator, rule.indicator);
       expect(restored.condition, rule.condition);
       expect(restored.value, rule.value);
+      expect(restored.confirmationDays, 2);
+      expect(restored.lookbackDays, 7);
     });
   });
 
   group('RuleGroup', () {
     test('toJson/fromJson roundtrip', () {
-      final group = RuleGroup(rules: [
-        SignalRule(indicator: 'rsi', condition: 'lt', value: 30),
-        SignalRule(indicator: 'macd', condition: 'gt', value: 0),
-      ]);
+      final group = RuleGroup(
+        rules: [
+          SignalRule(indicator: 'rsi', condition: 'lt', value: 30),
+          SignalRule(indicator: 'macd', condition: 'gt', value: 0),
+        ],
+      );
       final json = group.toJson();
       final restored = RuleGroup.fromJson(json);
       expect(restored.rules.length, 2);
@@ -67,9 +92,9 @@ void main() {
 
     test('isEmpty/isNotEmpty', () {
       final empty = RuleGroup(rules: []);
-      final nonEmpty = RuleGroup(rules: [
-        SignalRule(indicator: 'rsi', condition: 'gt', value: 50),
-      ]);
+      final nonEmpty = RuleGroup(
+        rules: [SignalRule(indicator: 'rsi', condition: 'gt', value: 50)],
+      );
       expect(empty.isEmpty, isTrue);
       expect(empty.isNotEmpty, isFalse);
       expect(nonEmpty.isEmpty, isFalse);

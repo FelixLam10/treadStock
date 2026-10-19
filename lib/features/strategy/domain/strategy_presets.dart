@@ -27,20 +27,13 @@ class StrategyPresets {
       isDefault: false,
       createdAt: now,
       updatedAt: now,
-      entryRules: [
-        SignalRule(indicator: 'rsi', condition: 'lt', value: 30),
-      ],
-      exitRules: [
-        SignalRule(indicator: 'rsi', condition: 'gt', value: 70),
-      ],
+      entryRules: [SignalRule(indicator: 'rsi', condition: 'lt', value: 30)],
+      exitRules: [SignalRule(indicator: 'rsi', condition: 'gt', value: 70)],
     );
   }
 
   /// MACD 金叉突破 — MACD 从下方穿越零线时入场，从上方穿越时出场
-  static Strategy macdGoldenCross({
-    required String id,
-    required DateTime now,
-  }) {
+  static Strategy macdGoldenCross({required String id, required DateTime now}) {
     return Strategy(
       id: id,
       name: 'MACD 金叉突破',
@@ -93,17 +86,12 @@ class StrategyPresets {
         SignalRule(indicator: 'k', condition: 'cross_up', value: 30),
         SignalRule(indicator: 'k', condition: 'lt', value: 40),
       ],
-      exitRules: [
-        SignalRule(indicator: 'k', condition: 'gt', value: 80),
-      ],
+      exitRules: [SignalRule(indicator: 'k', condition: 'gt', value: 80)],
     );
   }
 
   /// 布林带下轨反弹 — 价格触及布林带下沿且RSI超卖时入场，回到上轨附近出场
-  static Strategy bollBandBounce({
-    required String id,
-    required DateTime now,
-  }) {
+  static Strategy bollBandBounce({required String id, required DateTime now}) {
     return Strategy(
       id: id,
       name: '布林带下轨反弹',
@@ -132,10 +120,7 @@ class StrategyPresets {
   }
 
   /// 均线多头排列 — 短期均线在长期均线之上且量能放大时入场，多头结构破坏时出场
-  static Strategy maBullAlignment({
-    required String id,
-    required DateTime now,
-  }) {
+  static Strategy maBullAlignment({required String id, required DateTime now}) {
     return Strategy(
       id: id,
       name: '均线多头排列',
@@ -186,12 +171,14 @@ class StrategyPresets {
       createdAt: now,
       updatedAt: now,
       entryRules: [
-        SignalRule(indicator: 'vol_price_divergence', condition: 'gt', value: 0.5),
+        SignalRule(
+          indicator: 'vol_price_divergence',
+          condition: 'gt',
+          value: 0.5,
+        ),
         SignalRule(indicator: 'rsi', condition: 'lt', value: 40),
       ],
-      exitRules: [
-        SignalRule(indicator: 'rsi', condition: 'gt', value: 65),
-      ],
+      exitRules: [SignalRule(indicator: 'rsi', condition: 'gt', value: 65)],
     );
   }
 
@@ -262,16 +249,181 @@ class StrategyPresets {
       updatedAt: now,
       entryRules: [
         SignalRule(indicator: 'rsi', condition: 'lt', value: 30),
-        SignalRule(
-          indicator: 'k',
-          condition: 'cross_up',
-          value: 30,
-        ),
+        SignalRule(indicator: 'k', condition: 'cross_up', value: 30),
         SignalRule(indicator: 'boll_position', condition: 'lt', value: 0.2),
       ],
       exitRules: [
         SignalRule(indicator: 'rsi', condition: 'gt', value: 60),
         SignalRule(indicator: 'boll_position', condition: 'gt', value: 0.7),
+      ],
+    );
+  }
+
+  /// 五日均线两日确认 — 用收盘价与 MA5 的严格关系判断，横盘时暂停。
+  static Strategy fiveDayMaConfirmation({
+    required String id,
+    required DateTime now,
+  }) {
+    return Strategy(
+      id: id,
+      name: '五日均线两日确认',
+      description: '上升趋势中，收盘价首次站上 MA5 后等待下一交易日确认；横盘环境暂停信号',
+      maShortPeriod: 5,
+      maLongPeriod: 60,
+      bollPeriod: 20,
+      bollStdDev: 2.0,
+      weightMA: 0.4,
+      weightBoll: 0.1,
+      weightVol: 0.1,
+      weightTrend: 0.4,
+      recommendThreshold: 7,
+      isEnabled: true,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+      entryRules: const [
+        SignalRule(
+          indicator: 'market_environment',
+          condition: 'uptrend',
+          value: 0.15,
+          lookbackDays: 5,
+        ),
+        SignalRule(
+          indicator: 'price_ma_short',
+          condition: 'cross_up_confirmed',
+          value: 0,
+          confirmationDays: 2,
+        ),
+      ],
+      exitRules: const [
+        SignalRule(
+          indicator: 'price_ma_short',
+          condition: 'cross_down_confirmed',
+          value: 0,
+          confirmationDays: 2,
+        ),
+      ],
+    );
+  }
+
+  /// 梯级平台突破观察 — 较高平台收敛后，以放量突破作为趋势延续线索。
+  static Strategy ladderPlatformBreakout({
+    required String id,
+    required DateTime now,
+  }) {
+    return Strategy(
+      id: id,
+      name: '梯级平台突破观察',
+      description: '观察平台逐级抬高、区间收敛后的放量突破；跌回近期平台或短期均线下方视为结构失效',
+      maShortPeriod: 10,
+      maLongPeriod: 60,
+      weightMA: 0.35,
+      weightBoll: 0.05,
+      weightVol: 0.25,
+      weightTrend: 0.35,
+      recommendThreshold: 7,
+      isEnabled: true,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+      entryRules: const [
+        SignalRule(
+          indicator: 'market_environment',
+          condition: 'uptrend',
+          value: 0.15,
+          lookbackDays: 5,
+        ),
+        SignalRule(indicator: 'ladder_breakout', condition: 'gt', value: 0.5),
+        SignalRule(indicator: 'vol_ratio', condition: 'gt', value: 1.2),
+      ],
+      exitRules: const [
+        SignalRule(
+          indicator: 'ladder_support_gap_pct',
+          condition: 'lt',
+          value: 0,
+        ),
+        SignalRule(indicator: 'price_ma_short', condition: 'below', value: 0),
+      ],
+    );
+  }
+
+  /// 均线趋势确认 — MA5/MA20 交叉配合趋势斜率与量能过滤。
+  static Strategy movingAverageTrendConfirmation({
+    required String id,
+    required DateTime now,
+  }) {
+    return Strategy(
+      id: id,
+      name: '均线趋势确认',
+      description: '用 MA5 上穿 MA20 识别趋势切换，并用均线斜率和量能过滤震荡噪声；反向交叉视为失效',
+      maShortPeriod: 5,
+      maLongPeriod: 20,
+      weightMA: 0.45,
+      weightBoll: 0.05,
+      weightVol: 0.15,
+      weightTrend: 0.35,
+      recommendThreshold: 7,
+      isEnabled: true,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+      entryRules: const [
+        SignalRule(
+          indicator: 'market_environment',
+          condition: 'uptrend',
+          value: 0.15,
+          lookbackDays: 5,
+        ),
+        SignalRule(
+          indicator: 'ma_short',
+          condition: 'indicator_cross_up',
+          value: 0,
+          indicator2: 'ma_long',
+        ),
+        SignalRule(indicator: 'vol_ratio', condition: 'gt', value: 0.8),
+      ],
+      exitRules: const [
+        SignalRule(
+          indicator: 'ma_short',
+          condition: 'indicator_cross_down',
+          value: 0,
+          indicator2: 'ma_long',
+        ),
+      ],
+    );
+  }
+
+  /// 简化缠论三买观察 — 中枢向上离开后，回抽不回中枢。
+  static Strategy simplifiedChanThirdBuy({
+    required String id,
+    required DateTime now,
+  }) {
+    return Strategy(
+      id: id,
+      name: '简化缠论三买观察',
+      description: '以固定窗口近似中枢，观察向上离开后的回抽是否仍守在中枢上沿；仅用于结构学习与回测',
+      maShortPeriod: 10,
+      maLongPeriod: 20,
+      weightMA: 0.25,
+      weightBoll: 0.10,
+      weightVol: 0.15,
+      weightTrend: 0.50,
+      recommendThreshold: 7,
+      isEnabled: true,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+      entryRules: const [
+        SignalRule(indicator: 'chan_third_buy', condition: 'gt', value: 0.5),
+        SignalRule(indicator: 'price_ma_long', condition: 'above', value: 0),
+      ],
+      exitRules: const [
+        SignalRule(
+          indicator: 'chan_center_support_gap_pct',
+          condition: 'lt',
+          value: 0,
+        ),
+        SignalRule(indicator: 'price_ma_long', condition: 'below', value: 0),
       ],
     );
   }
@@ -290,6 +442,10 @@ class StrategyPresets {
       volPriceDivergenceBottom(id: idGenerator(), now: now),
       trendGoldenCross(id: idGenerator(), now: now),
       oversoldBounceHunter(id: idGenerator(), now: now),
+      fiveDayMaConfirmation(id: idGenerator(), now: now),
+      ladderPlatformBreakout(id: idGenerator(), now: now),
+      movingAverageTrendConfirmation(id: idGenerator(), now: now),
+      simplifiedChanThirdBuy(id: idGenerator(), now: now),
     ];
   }
 }

@@ -75,7 +75,11 @@ class AnalysisEngine {
   }
 
   /// Calculate MA score (0-10).
-  double _calculateMAScore(List<double> closes, List<double> ma20, List<double> ma60) {
+  double _calculateMAScore(
+    List<double> closes,
+    List<double> ma20,
+    List<double> ma60,
+  ) {
     if (closes.isEmpty || ma20.isEmpty || ma60.isEmpty) return 5.0;
 
     final price = closes.last;
@@ -255,14 +259,19 @@ class AnalysisEngine {
     final closes = klines.map((k) => k.close).toList();
     final maShort = calculateMA(closes, maShortPeriod);
     final maLong = calculateMA(closes, maLongPeriod);
-    final boll = calculateBollinger(closes, period: bollPeriod, stdDev: bollStdDev);
+    final boll = calculateBollinger(
+      closes,
+      period: bollPeriod,
+      stdDev: bollStdDev,
+    );
 
     final maScore = _calculateMAScore(closes, maShort, maLong);
     final bollScore = _calculateBollScore(closes, boll);
     final volScore = _calculateVolScore(klines);
     final trendScore = _calculateTrendScore(klines);
 
-    final rawScore = weightMA * maScore +
+    final rawScore =
+        weightMA * maScore +
         weightBoll * bollScore +
         weightVol * volScore +
         weightTrend * trendScore;
@@ -294,7 +303,10 @@ class AnalysisEngine {
   }
 
   /// Calculate score using a Strategy object.
-  StockScore calculateScoreForStrategy(List<DailyKline> klines, Strategy strategy) {
+  StockScore calculateScoreForStrategy(
+    List<DailyKline> klines,
+    Strategy strategy,
+  ) {
     if (strategy.isRuleBased) {
       return _evaluateWithRules(klines, strategy);
     }
@@ -313,10 +325,9 @@ class AnalysisEngine {
   }
 
   StockScore _evaluateWithRules(List<DailyKline> klines, Strategy strategy) {
-    final result = RuleEngine.evaluate(
+    final result = RuleEngine.evaluateStrategy(
       klines: klines,
-      entryRules: strategy.entryRules!,
-      exitRules: strategy.exitRules ?? [],
+      strategy: strategy,
     );
 
     // Map rule evaluation to StockScore:
@@ -439,7 +450,8 @@ class AnalysisEngine {
     final changePct = lastDay.changePct;
 
     final support = boll.currentLower ?? (ma20.isNotEmpty ? ma20.last : null);
-    final resistance = boll.currentUpper ?? (ma60.isNotEmpty ? ma60.last : null);
+    final resistance =
+        boll.currentUpper ?? (ma60.isNotEmpty ? ma60.last : null);
 
     // Condition 1: Price below MA20 and daily drop > 2%
     if (ma20.isNotEmpty && lastDay.close < ma20.last && changePct < -2) {
@@ -543,7 +555,9 @@ class AnalysisEngine {
 
     // Summary text
     final buffer = StringBuffer();
-    buffer.writeln('收盘价 ${_formatPrice(lastDay.close)}，涨幅 ${_formatPct(changePct)}');
+    buffer.writeln(
+      '收盘价 ${_formatPrice(lastDay.close)}，涨幅 ${_formatPct(changePct)}',
+    );
     buffer.write('波段位置：');
 
     switch (bandPosition) {
@@ -644,8 +658,11 @@ class AnalysisEngine {
       final high = klines[i].high;
       final low = klines[i].low;
       final prevClose = i > 0 ? klines[i - 1].close : klines[i].open;
-      final tr = [high - low, (high - prevClose).abs(), (low - prevClose).abs()]
-          .reduce((a, b) => a > b ? a : b);
+      final tr = [
+        high - low,
+        (high - prevClose).abs(),
+        (low - prevClose).abs(),
+      ].reduce((a, b) => a > b ? a : b);
       atr += tr;
     }
     atr /= lookback > 0 ? lookback : 1;
@@ -706,9 +723,13 @@ class AnalysisEngine {
     // Volume confirmation (max +0.15)
     if (direction == PredictionDirection.up && volRatio < 0.8) {
       confidence += 0.15; // shrinking volume at low = bullish
-    } else if (direction == PredictionDirection.up && volRatio > 1.5 && changePct > 2) {
+    } else if (direction == PredictionDirection.up &&
+        volRatio > 1.5 &&
+        changePct > 2) {
       confidence += 0.15; // breakout volume
-    } else if (direction == PredictionDirection.down && volRatio > 1.5 && changePct < -2) {
+    } else if (direction == PredictionDirection.down &&
+        volRatio > 1.5 &&
+        changePct < -2) {
       confidence += 0.15; // distribution volume
     }
 
@@ -755,7 +776,9 @@ class AnalysisEngine {
       buffer.write('；支撑 ${_formatPrice(support)}');
       buffer.write('，压力 ${_formatPrice(resistance)}');
     }
-    buffer.write('；预测区间 ${targetLow.toStringAsFixed(2)}-${targetHigh.toStringAsFixed(2)}');
+    buffer.write(
+      '；预测区间 ${targetLow.toStringAsFixed(2)}-${targetHigh.toStringAsFixed(2)}',
+    );
 
     return StockPrediction(
       direction: direction,

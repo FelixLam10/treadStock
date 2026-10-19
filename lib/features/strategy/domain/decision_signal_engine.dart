@@ -26,11 +26,15 @@ class DecisionSignalEngine {
     required String stockName,
     double? currentPrice,
     double? changePct,
+    int? strategyVersion,
   }) {
     final now = DateTime.now();
+    final sampleCount = strategy.stats?.evaluatedCount ?? 0;
+    final sampleStatus = _sampleStatus(sampleCount);
 
     // If no entry/exit rules are configured, return a neutral card
-    final hasRules = (strategy.entryRules?.isNotEmpty ?? false) ||
+    final hasRules =
+        (strategy.entryRules?.isNotEmpty ?? false) ||
         (strategy.exitRules?.isNotEmpty ?? false) ||
         (strategy.entryGroups?.isNotEmpty ?? false) ||
         (strategy.exitGroups?.isNotEmpty ?? false);
@@ -49,6 +53,11 @@ class DecisionSignalEngine {
         ruleResults: const {},
         indicatorValues: const {},
         evaluatedAt: now,
+        resultStatus: StrategyAnalysisResultStatus.noMatch,
+        sampleStatus: sampleStatus,
+        sampleCount: sampleCount,
+        strategyVersion: strategyVersion,
+        strategyUpdatedAt: strategy.updatedAt,
         currentPrice: currentPrice,
         changePct: changePct,
       );
@@ -70,6 +79,11 @@ class DecisionSignalEngine {
         ruleResults: const {},
         indicatorValues: const {},
         evaluatedAt: now,
+        resultStatus: StrategyAnalysisResultStatus.insufficientData,
+        sampleStatus: sampleStatus,
+        sampleCount: sampleCount,
+        strategyVersion: strategyVersion,
+        strategyUpdatedAt: strategy.updatedAt,
         currentPrice: currentPrice,
         changePct: changePct,
       );
@@ -78,15 +92,9 @@ class DecisionSignalEngine {
     // Run rule engine
     final entryRules = strategy.entryRules ?? [];
     final exitRules = strategy.exitRules ?? [];
-    final entryGroups = strategy.entryGroups;
-    final exitGroups = strategy.exitGroups;
-
-    final result = RuleEngine.evaluate(
+    final result = RuleEngine.evaluateStrategy(
       klines: klines,
-      entryRules: entryRules,
-      exitRules: exitRules,
-      entryGroups: entryGroups,
-      exitGroups: exitGroups,
+      strategy: strategy,
     );
 
     // Build rule results map
@@ -106,6 +114,13 @@ class DecisionSignalEngine {
     // Determine signal type and strength
     final entryTriggered = result.entryTriggered;
     final exitTriggered = result.exitTriggered;
+    final hasInsufficientRuleData =
+        !entryTriggered &&
+        !exitTriggered &&
+        [
+          ...result.entryDetails,
+          ...result.exitDetails,
+        ].any((detail) => detail.state == RuleProgressState.insufficientData);
     final entryPassRate = _passRate(result.entryResults);
     final exitPassRate = _passRate(result.exitResults);
 
@@ -117,18 +132,24 @@ class DecisionSignalEngine {
       totalRules: entryRules.length + exitRules.length,
     );
 
-    final headline = _buildHeadline(type, strength, stockName);
-    final detail = _buildDetail(
-      type: type,
-      strength: strength,
-      entryTriggered: entryTriggered,
-      exitTriggered: exitTriggered,
-      entryPassRate: entryPassRate,
-      exitPassRate: exitPassRate,
-      highlights: highlights,
-      indicatorValues: result.indicatorValues,
-    );
-    final suggestion = _buildSuggestion(type, strength, highlights);
+    final headline = hasInsufficientRuleData
+        ? '$stockName 结构样本不足'
+        : _buildHeadline(type, strength, stockName);
+    final detail = hasInsufficientRuleData
+        ? '当前K线数量不足以完成全部结构规则，暂不判断是否匹配。'
+        : _buildDetail(
+            type: type,
+            strength: strength,
+            entryTriggered: entryTriggered,
+            exitTriggered: exitTriggered,
+            entryPassRate: entryPassRate,
+            exitPassRate: exitPassRate,
+            highlights: highlights,
+            indicatorValues: result.indicatorValues,
+          );
+    final suggestion = hasInsufficientRuleData
+        ? '继续积累日K数据后再观察与复盘。'
+        : _buildSuggestion(type, strength, highlights);
 
     return SignalCard(
       stockCode: stockCode,
@@ -144,6 +165,22 @@ class DecisionSignalEngine {
       ruleResults: ruleResults,
       indicatorValues: result.indicatorValues,
       evaluatedAt: now,
+      ruleProgress: [...result.entryDetails, ...result.exitDetails]
+          .where((detail) => detail.message.isNotEmpty)
+          .map((detail) => detail.message)
+          .toList(),
+      resultStatus: hasInsufficientRuleData
+          ? StrategyAnalysisResultStatus.insufficientData
+          : switch (type) {
+              SignalType.entry ||
+              SignalType.exit => StrategyAnalysisResultStatus.matched,
+              SignalType.watch => StrategyAnalysisResultStatus.close,
+              SignalType.neutral => StrategyAnalysisResultStatus.noMatch,
+            },
+      sampleStatus: sampleStatus,
+      sampleCount: sampleCount,
+      strategyVersion: strategyVersion,
+      strategyUpdatedAt: strategy.updatedAt,
       currentPrice: currentPrice,
       changePct: changePct,
     );
@@ -157,16 +194,20 @@ class DecisionSignalEngine {
     required String stockName,
     double? currentPrice,
     double? changePct,
+    Map<String, int>? strategyVersions,
   }) {
     return strategies
-        .map((s) => evaluate(
-              klines: klines,
-              strategy: s,
-              stockCode: stockCode,
-              stockName: stockName,
-              currentPrice: currentPrice,
-              changePct: changePct,
-            ))
+        .map(
+          (s) => evaluate(
+            klines: klines,
+            strategy: s,
+            stockCode: stockCode,
+            stockName: stockName,
+            currentPrice: currentPrice,
+            changePct: changePct,
+            strategyVersion: strategyVersions?[s.id],
+          ),
+        )
         .toList();
   }
 
@@ -190,6 +231,13 @@ class DecisionSignalEngine {
       'obv': 'OBV',
       'ma_short': '短期MA',
       'ma_long': '长期MA',
+      'price_ma_short': '收盘价/短期MA',
+      'price_ma_long': '收盘价/长期MA',
+      'market_environment': '趋势环境',
+      'ladder_breakout': '梯级平台突破',
+      'ladder_support_gap_pct': '梯级平台支撑距离',
+      'chan_third_buy': '简化缠论三买结构',
+      'chan_center_support_gap_pct': '简化中枢上沿距离',
     };
     final conds = {
       'gt': '>',
@@ -199,6 +247,14 @@ class DecisionSignalEngine {
       'cross_down': '下穿',
       'indicator_cross_up': '上穿',
       'indicator_cross_down': '下穿',
+      'above': '高于',
+      'below': '低于',
+      'cross_up_confirmed': '上穿后确认',
+      'cross_down_confirmed': '下穿后确认',
+      'uptrend': '上升趋势',
+      'downtrend': '下降趋势',
+      'sideways': '横盘',
+      'not_sideways': '非横盘',
     };
     final name = names[rule.indicator] ?? rule.indicator;
     final cond = conds[rule.condition] ?? rule.condition;
@@ -217,6 +273,12 @@ class DecisionSignalEngine {
   static double _passRate(List<bool> results) {
     if (results.isEmpty) return 0;
     return results.where((r) => r).length / results.length;
+  }
+
+  static StrategySampleStatus _sampleStatus(int count) {
+    if (count == 0) return StrategySampleStatus.none;
+    if (count < 20) return StrategySampleStatus.insufficient;
+    return StrategySampleStatus.reviewable;
   }
 
   static (SignalType, SignalStrength) _classifySignal({
@@ -247,7 +309,9 @@ class DecisionSignalEngine {
 
     // No signal triggered — check if close to triggering
     if (totalRules > 0) {
-      final maxRate = entryPassRate > exitPassRate ? entryPassRate : exitPassRate;
+      final maxRate = entryPassRate > exitPassRate
+          ? entryPassRate
+          : exitPassRate;
       if (maxRate >= 0.5) {
         return (SignalType.watch, SignalStrength.weak);
       }
@@ -256,39 +320,41 @@ class DecisionSignalEngine {
     return (SignalType.neutral, SignalStrength.none);
   }
 
-  static List<IndicatorHighlight> _buildHighlights(
-    Map<String, double> values,
-  ) {
+  static List<IndicatorHighlight> _buildHighlights(Map<String, double> values) {
     final highlights = <IndicatorHighlight>[];
 
     // RSI
     final rsi = values['rsi'];
     if (rsi != null) {
-      highlights.add(IndicatorHighlight(
-        name: 'RSI',
-        value: rsi.toStringAsFixed(1),
-        status: rsi < 30
-            ? '超卖'
-            : rsi > 70
-                ? '超买'
-                : rsi < 45
-                    ? '偏低'
-                    : rsi > 55
-                        ? '偏高'
-                        : '中性',
-        isPositive: rsi < 40,
-      ));
+      highlights.add(
+        IndicatorHighlight(
+          name: 'RSI',
+          value: rsi.toStringAsFixed(1),
+          status: rsi < 30
+              ? '超卖'
+              : rsi > 70
+              ? '超买'
+              : rsi < 45
+              ? '偏低'
+              : rsi > 55
+              ? '偏高'
+              : '中性',
+          isPositive: rsi < 40,
+        ),
+      );
     }
 
     // MACD
     final macdHist = values['macd_hist'];
     if (macdHist != null) {
-      highlights.add(IndicatorHighlight(
-        name: 'MACD',
-        value: macdHist.toStringAsFixed(3),
-        status: macdHist > 0 ? '多头' : '空头',
-        isPositive: macdHist > 0,
-      ));
+      highlights.add(
+        IndicatorHighlight(
+          name: 'MACD',
+          value: macdHist.toStringAsFixed(3),
+          status: macdHist > 0 ? '多头' : '空头',
+          isPositive: macdHist > 0,
+        ),
+      );
     }
 
     // KDJ
@@ -296,12 +362,18 @@ class DecisionSignalEngine {
     final d = values['d'];
     if (k != null && d != null) {
       final kdStatus = k > d ? 'K>D' : 'K<D';
-      highlights.add(IndicatorHighlight(
-        name: 'KDJ',
-        value: 'K:${k.toStringAsFixed(1)} D:${d.toStringAsFixed(1)}',
-        status: k < 20 && d < 20 ? '低位' : k > 80 && d > 80 ? '高位' : kdStatus,
-        isPositive: k > d && k < 80,
-      ));
+      highlights.add(
+        IndicatorHighlight(
+          name: 'KDJ',
+          value: 'K:${k.toStringAsFixed(1)} D:${d.toStringAsFixed(1)}',
+          status: k < 20 && d < 20
+              ? '低位'
+              : k > 80 && d > 80
+              ? '高位'
+              : kdStatus,
+          isPositive: k > d && k < 80,
+        ),
+      );
     }
 
     // Bollinger position
@@ -310,29 +382,59 @@ class DecisionSignalEngine {
       final bollStatus = bollPos < 0.2
           ? '下轨附近'
           : bollPos > 0.8
-              ? '上轨附近'
-              : '中轨附近';
-      highlights.add(IndicatorHighlight(
-        name: '布林',
-        value: '${(bollPos * 100).toStringAsFixed(0)}%',
-        status: bollStatus,
-        isPositive: bollPos < 0.3,
-      ));
+          ? '上轨附近'
+          : '中轨附近';
+      highlights.add(
+        IndicatorHighlight(
+          name: '布林',
+          value: '${(bollPos * 100).toStringAsFixed(0)}%',
+          status: bollStatus,
+          isPositive: bollPos < 0.3,
+        ),
+      );
     }
 
     // Volume ratio
     final volRatio = values['vol_ratio'];
     if (volRatio != null) {
-      highlights.add(IndicatorHighlight(
-        name: '量比',
-        value: volRatio.toStringAsFixed(2),
-        status: volRatio > 2.0
-            ? '放量'
-            : volRatio < 0.5
-                ? '缩量'
-                : '正常',
-        isPositive: volRatio >= 0.8 && volRatio <= 2.0,
-      ));
+      highlights.add(
+        IndicatorHighlight(
+          name: '量比',
+          value: volRatio.toStringAsFixed(2),
+          status: volRatio > 2.0
+              ? '放量'
+              : volRatio < 0.5
+              ? '缩量'
+              : '正常',
+          isPositive: volRatio >= 0.8 && volRatio <= 2.0,
+        ),
+      );
+    }
+
+    final ladderBreakout = values['ladder_breakout'];
+    if (ladderBreakout != null) {
+      final width = values['ladder_platform_width_pct'];
+      highlights.add(
+        IndicatorHighlight(
+          name: '梯级',
+          value: width == null ? '--' : '${width.toStringAsFixed(1)}%',
+          status: ladderBreakout > 0.5 ? '平台突破' : '结构未完成',
+          isPositive: ladderBreakout > 0.5,
+        ),
+      );
+    }
+
+    final chanThirdBuy = values['chan_third_buy'];
+    if (chanThirdBuy != null) {
+      final gap = values['chan_center_support_gap_pct'];
+      highlights.add(
+        IndicatorHighlight(
+          name: '简化中枢',
+          value: gap == null ? '--' : '${gap.toStringAsFixed(1)}%',
+          status: chanThirdBuy > 0.5 ? '回抽未回中枢' : '结构未完成',
+          isPositive: chanThirdBuy > 0.5,
+        ),
+      );
     }
 
     return highlights;
@@ -395,10 +497,12 @@ class DecisionSignalEngine {
     }
 
     // Key indicator summary
-    final positiveIndicators =
-        highlights.where((h) => h.isPositive).map((h) => h.name);
-    final negativeIndicators =
-        highlights.where((h) => !h.isPositive).map((h) => h.name);
+    final positiveIndicators = highlights
+        .where((h) => h.isPositive)
+        .map((h) => h.name);
+    final negativeIndicators = highlights
+        .where((h) => !h.isPositive)
+        .map((h) => h.name);
 
     if (positiveIndicators.isNotEmpty) {
       parts.add('偏多指标：${positiveIndicators.join('、')}。');
@@ -435,10 +539,10 @@ class DecisionSignalEngine {
 
     if (type == SignalType.exit) {
       if (strength == SignalStrength.strong) {
-        return '多个离场条件触发，建议考虑减仓或止损。注意观察关键支撑位。';
+        return '多个风险条件触发，请检查既定风险边界并结合复盘判断。';
       }
       if (strength == SignalStrength.moderate) {
-        return '出现离场迹象，建议收紧止损线。关注短期均线支撑情况。';
+        return '出现风险迹象，关注短期均线与既定退出观察条件。';
       }
       return '离场信号偏弱，建议保持观察，暂不急于操作。';
     }

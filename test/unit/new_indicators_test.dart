@@ -5,7 +5,13 @@ import 'package:stockpilot/features/strategy/domain/rule_engine.dart';
 import 'package:stockpilot/features/strategy/domain/signal_rule.dart';
 import 'package:stockpilot/features/strategy/domain/strategy_presets.dart';
 
-DailyKline _k(double close, {double volume = 1000, double open = 0, double high = 0, double low = 0}) {
+DailyKline _k(
+  double close, {
+  double volume = 1000,
+  double open = 0,
+  double high = 0,
+  double low = 0,
+}) {
   return DailyKline(
     date: DateTime(2026, 1, 1),
     open: open > 0 ? open : close,
@@ -49,10 +55,7 @@ void main() {
     });
 
     test('returns 0.5 when upper == lower', () {
-      expect(
-        IndicatorCalculator.calculateBollPosition(50.0, 50.0, 50.0),
-        0.5,
-      );
+      expect(IndicatorCalculator.calculateBollPosition(50.0, 50.0, 50.0), 0.5);
     });
 
     test('clamps values below 0', () {
@@ -93,10 +96,7 @@ void main() {
     });
 
     test('returns 5.0 when insufficient data', () {
-      expect(
-        IndicatorCalculator.calculateMAAlignment([1.0, 2.0, 3.0]),
-        5.0,
-      );
+      expect(IndicatorCalculator.calculateMAAlignment([1.0, 2.0, 3.0]), 5.0);
     });
 
     test('returns partial score for partial alignment', () {
@@ -192,10 +192,7 @@ void main() {
     });
 
     test('returns 1.0 for insufficient data', () {
-      expect(
-        IndicatorCalculator.calculateVolumeRatio([_k(10.0)]),
-        1.0,
-      );
+      expect(IndicatorCalculator.calculateVolumeRatio([_k(10.0)]), 1.0);
     });
   });
 
@@ -204,15 +201,17 @@ void main() {
       final klines = <DailyKline>[];
       for (var i = 0; i < count; i++) {
         final price = 10.0 + i * 0.5;
-        klines.add(DailyKline(
-          date: DateTime(2026, 1, 1 + i),
-          open: price,
-          close: price + 0.1,
-          high: price + 0.5,
-          low: price - 0.5,
-          volume: 1000 + (i % 3) * 100,
-          amount: price * 1000,
-        ));
+        klines.add(
+          DailyKline(
+            date: DateTime(2026, 1, 1 + i),
+            open: price,
+            close: price + 0.1,
+            high: price + 0.5,
+            low: price - 0.5,
+            volume: 1000 + (i % 3) * 100,
+            amount: price * 1000,
+          ),
+        );
       }
       return klines;
     }
@@ -221,11 +220,16 @@ void main() {
       final klines = makeTrendingKlines(80);
       final result = RuleEngine.evaluate(
         klines: klines,
-        entryRules: [SignalRule(indicator: 'boll_position', condition: 'gt', value: -1)],
+        entryRules: [
+          SignalRule(indicator: 'boll_position', condition: 'gt', value: -1),
+        ],
         exitRules: [],
       );
       expect(result.indicatorValues, contains('boll_position'));
-      expect(result.indicatorValues['boll_position'], greaterThanOrEqualTo(0.0));
+      expect(
+        result.indicatorValues['boll_position'],
+        greaterThanOrEqualTo(0.0),
+      );
       expect(result.indicatorValues['boll_position'], lessThanOrEqualTo(1.0));
     });
 
@@ -233,7 +237,9 @@ void main() {
       final klines = makeTrendingKlines(80);
       final result = RuleEngine.evaluate(
         klines: klines,
-        entryRules: [SignalRule(indicator: 'ma_alignment', condition: 'gt', value: -1)],
+        entryRules: [
+          SignalRule(indicator: 'ma_alignment', condition: 'gt', value: -1),
+        ],
         exitRules: [],
       );
       expect(result.indicatorValues, contains('ma_alignment'));
@@ -245,7 +251,13 @@ void main() {
       final klines = makeTrendingKlines(80);
       final result = RuleEngine.evaluate(
         klines: klines,
-        entryRules: [SignalRule(indicator: 'vol_price_divergence', condition: 'gt', value: -1)],
+        entryRules: [
+          SignalRule(
+            indicator: 'vol_price_divergence',
+            condition: 'gt',
+            value: -1,
+          ),
+        ],
         exitRules: [],
       );
       expect(result.indicatorValues, contains('vol_price_divergence'));
@@ -255,7 +267,9 @@ void main() {
       final klines = makeTrendingKlines(80);
       final result = RuleEngine.evaluate(
         klines: klines,
-        entryRules: [SignalRule(indicator: 'vol_ratio', condition: 'gt', value: 0)],
+        entryRules: [
+          SignalRule(indicator: 'vol_ratio', condition: 'gt', value: 0),
+        ],
         exitRules: [],
       );
       expect(result.indicatorValues, contains('vol_ratio'));
@@ -264,12 +278,12 @@ void main() {
   });
 
   group('StrategyPresets new templates', () {
-    test('all() returns 8 presets', () {
+    test('all() returns 12 presets', () {
       final presets = StrategyPresets.all(
         idGenerator: () => 'test-id',
         now: DateTime(2026, 1, 1),
       );
-      expect(presets.length, 8);
+      expect(presets.length, 12);
     });
 
     test('bollBandBounce has correct entry/exit rules', () {

@@ -4,6 +4,7 @@ import 'package:stockpilot/features/strategy/domain/decision_signal_engine.dart'
 import 'package:stockpilot/features/strategy/domain/signal_card.dart';
 import 'package:stockpilot/features/strategy/domain/signal_rule.dart';
 import 'package:stockpilot/features/strategy/domain/strategy_models.dart';
+import 'package:stockpilot/features/strategy/domain/strategy_presets.dart';
 
 List<DailyKline> _buildTrendingKlines({
   int count = 60,
@@ -31,9 +32,7 @@ Strategy _entryStrategy() {
     description: 'rule-based entry',
     createdAt: DateTime(2025, 1, 1),
     updatedAt: DateTime(2025, 1, 1),
-    entryRules: const [
-      SignalRule(indicator: 'rsi', condition: 'gt', value: 0),
-    ],
+    entryRules: const [SignalRule(indicator: 'rsi', condition: 'gt', value: 0)],
     exitRules: const [],
   );
 }
@@ -46,9 +45,7 @@ Strategy _exitStrategy() {
     createdAt: DateTime(2025, 1, 1),
     updatedAt: DateTime(2025, 1, 1),
     entryRules: const [],
-    exitRules: const [
-      SignalRule(indicator: 'rsi', condition: 'gt', value: 0),
-    ],
+    exitRules: const [SignalRule(indicator: 'rsi', condition: 'gt', value: 0)],
   );
 }
 
@@ -111,5 +108,27 @@ void main() {
       expect(card.ruleResults.values.single, isTrue);
       expect(card.headline, contains('离场'));
     });
+
+    test(
+      'reports insufficient data when a structural window is incomplete',
+      () {
+        final card = DecisionSignalEngine.evaluate(
+          klines: _buildTrendingKlines(count: 30),
+          strategy: StrategyPresets.ladderPlatformBreakout(
+            id: 'ladder',
+            now: DateTime(2026, 1, 1),
+          ),
+          stockCode: '600000',
+          stockName: '浦发银行',
+        );
+
+        expect(
+          card.resultStatus,
+          StrategyAnalysisResultStatus.insufficientData,
+        );
+        expect(card.headline, contains('样本不足'));
+        expect(card.isActionable, isFalse);
+      },
+    );
   });
 }

@@ -87,3 +87,104 @@ class StrategyReviews extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// A privacy-conscious source record attached to an imported strategy.
+///
+/// Raw screenshots are never persisted here. [sanitizedText] is optional and
+/// is only stored when the user explicitly opts in during import.
+@DataClassName('StrategySourceRow')
+class StrategySources extends Table {
+  TextColumn get id => text()();
+  TextColumn get strategyId =>
+      text().references(Strategies, #id, onDelete: KeyAction.cascade)();
+  TextColumn get externalRef => text()();
+  TextColumn get sourceType => text()();
+  TextColumn get speaker => text().nullable()();
+  DateTimeColumn get capturedAt => dateTime().nullable()();
+  TextColumn get summary => text()();
+  TextColumn get sanitizedText => text().nullable()();
+  TextColumn get fingerprint => text()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {strategyId, fingerprint},
+  ];
+}
+
+/// Immutable strategy configuration snapshots.
+///
+/// Lifecycle status may change in a later phase, but [strategySnapshotJson]
+/// and the review metadata are never overwritten.
+@DataClassName('StrategyVersionRow')
+class StrategyVersions extends Table {
+  TextColumn get id => text()();
+  TextColumn get strategyId =>
+      text().references(Strategies, #id, onDelete: KeyAction.cascade)();
+  IntColumn get versionNumber => integer()();
+  TextColumn get status => text()();
+  TextColumn get strategyType => text()();
+  TextColumn get strategySnapshotJson => text()();
+  TextColumn get packageJson => text().nullable()();
+  TextColumn get applicabilityJson => text()();
+  TextColumn get riskNotesJson => text()();
+  TextColumn get pendingQuestionsJson => text()();
+  TextColumn get compatibilityIssuesJson => text()();
+  TextColumn get previousVersionId => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {strategyId, versionNumber},
+  ];
+}
+
+/// Links one immutable version to its source records and normalized rule IDs.
+@DataClassName('StrategyVersionSourceRow')
+class StrategyVersionSources extends Table {
+  TextColumn get versionId =>
+      text().references(StrategyVersions, #id, onDelete: KeyAction.cascade)();
+  TextColumn get sourceId =>
+      text().references(StrategySources, #id, onDelete: KeyAction.cascade)();
+  TextColumn get ruleIdsJson => text()();
+
+  @override
+  Set<Column> get primaryKey => {versionId, sourceId};
+}
+
+/// Immutable version-bound backtest reports.
+///
+/// The result JSON contains calculated metrics and completed trades. Explicit
+/// metadata columns allow history queries without mutating old reports when a
+/// strategy or a default parameter changes later.
+@DataClassName('StrategyBacktestRunRow')
+class StrategyBacktestRuns extends Table {
+  TextColumn get id => text()();
+  TextColumn get strategyId =>
+      text().references(Strategies, #id, onDelete: KeyAction.cascade)();
+  TextColumn get strategyVersionId =>
+      text().references(StrategyVersions, #id, onDelete: KeyAction.cascade)();
+  IntColumn get strategyVersionNumber => integer()();
+  TextColumn get stockCode => text()();
+  TextColumn get stockName => text()();
+  TextColumn get market => text()();
+  TextColumn get configJson => text()();
+  TextColumn get resultJson => text()();
+  TextColumn get adjustmentMode => text()();
+  TextColumn get dataFingerprint => text()();
+  DateTimeColumn get dataStart => dateTime().nullable()();
+  DateTimeColumn get dataEnd => dateTime().nullable()();
+  DateTimeColumn get dataAsOf => dateTime()();
+  IntColumn get barsProcessed => integer()();
+  IntColumn get sampleCount => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

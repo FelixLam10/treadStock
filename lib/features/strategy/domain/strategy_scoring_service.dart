@@ -2,6 +2,7 @@ import '../../analysis/domain/analysis_engine.dart';
 import '../../analysis/domain/analysis_models.dart';
 import '../../stock/domain/stock_models.dart';
 import 'strategy_models.dart';
+import 'rule_engine.dart';
 
 /// Unified scoring facade used by recommendation and watchlist surfaces.
 class StrategyScoringService {
@@ -15,12 +16,18 @@ class StrategyScoringService {
     required Strategy strategy,
   }) {
     final score = _analysisEngine.calculateScoreForStrategy(klines, strategy);
+    final isMatched = strategy.isRuleBased
+        ? RuleEngine.evaluateStrategy(
+            klines: klines,
+            strategy: strategy,
+          ).entryTriggered
+        : score.score >= strategy.recommendThreshold;
     return StrategyScoreResult(
       strategyId: strategy.id,
       strategyName: strategy.name,
       recommendThreshold: strategy.recommendThreshold,
       score: score,
-      isMatched: score.score >= strategy.recommendThreshold,
+      isMatched: isMatched,
     );
   }
 

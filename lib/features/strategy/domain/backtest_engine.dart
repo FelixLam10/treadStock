@@ -112,14 +112,14 @@ class BacktestEngine {
         }
         // Exit rules (rule-based strategies)
         if (exitReason == null &&
-            strategy.exitRules != null &&
-            strategy.exitRules!.isNotEmpty) {
+            ((strategy.exitRules?.isNotEmpty ?? false) ||
+                (strategy.exitGroups?.isNotEmpty ?? false))) {
           final subKlines = klines.sublist(0, i + 1);
-          final result = RuleEngine.evaluate(
+          final result = RuleEngine.evaluateStrategy(
             klines: subKlines,
+            strategy: strategy,
             entryRules: const [],
-            exitRules: strategy.exitRules!,
-            exitGroups: strategy.exitGroups,
+            entryGroups: const [],
           );
           if (result.exitTriggered) {
             exitReason = ExitReason.signalExit;
@@ -148,22 +148,24 @@ class BacktestEngine {
               grossProfit - entryCommission - exitCommission - stampTax;
           final returnPct = netProfit / entryCost;
 
-          trades.add(BacktestTrade(
-            direction: TradeDirection.long,
-            entryBarIndex: entryBarIndex,
-            entryDate: ed,
-            entryPrice: ep,
-            exitBarIndex: i,
-            exitDate: currentDate,
-            exitPrice: exitPrice,
-            shares: shares,
-            grossProfit: grossProfit,
-            commission: entryCommission + exitCommission,
-            stampTax: stampTax,
-            netProfit: netProfit,
-            returnPct: returnPct,
-            exitReason: exitReason,
-          ));
+          trades.add(
+            BacktestTrade(
+              direction: TradeDirection.long,
+              entryBarIndex: entryBarIndex,
+              entryDate: ed,
+              entryPrice: ep,
+              exitBarIndex: i,
+              exitDate: currentDate,
+              exitPrice: exitPrice,
+              shares: shares,
+              grossProfit: grossProfit,
+              commission: entryCommission + exitCommission,
+              stampTax: stampTax,
+              netProfit: netProfit,
+              returnPct: returnPct,
+              exitReason: exitReason,
+            ),
+          );
 
           cash += netProfit;
           entryBarIndex = null;
@@ -179,39 +181,51 @@ class BacktestEngine {
         if (strategy.isRuleBased) {
           // Rule-based: all entry rules must pass (flat OR groups)
           final subKlines = klines.sublist(0, i + 1);
-          final result = RuleEngine.evaluate(
+          final result = RuleEngine.evaluateStrategy(
             klines: subKlines,
-            entryRules: strategy.entryRules ?? [],
-            entryGroups: strategy.entryGroups,
+            strategy: strategy,
             exitRules: const [],
+            exitGroups: const [],
           );
           shouldEnter = result.entryTriggered;
         } else {
           // Weighted strategy: score >= threshold
           final subKlines = klines.sublist(0, i + 1);
-          final score =
-              analysisEngine.calculateScoreForStrategy(subKlines, strategy);
+          final score = analysisEngine.calculateScoreForStrategy(
+            subKlines,
+            strategy,
+          );
           shouldEnter = score.score >= strategy.recommendThreshold;
         }
 
-        if (shouldEnter && (config.maxTrades == 0 || trades.length < config.maxTrades)) {
-          entryBarIndex = i;
-          entryPrice = klines[i].close + config.slippage;
-          entryDate = currentDate;
-          trailingPeak = klines[i].close;
-          trailingActivated = false;
+        if (shouldEnter &&
+            (config.maxTrades == 0 || trades.length < config.maxTrades)) {
+          final candidateEntryPrice = klines[i].close + config.slippage;
+          final executableShares = _calcShares(
+            config.initialCapital * config.positionSize,
+            candidateEntryPrice,
+            config,
+          );
+          if (executableShares > 0) {
+            entryBarIndex = i;
+            entryPrice = candidateEntryPrice;
+            entryDate = currentDate;
+            trailingPeak = klines[i].close;
+            trailingActivated = false;
+          }
         }
       }
 
       // Track equity curve peak/drawdown
-      final currentEquity = cash +
+      final currentEquity =
+          cash +
           (entryBarIndex != null && entryPrice != null
               ? (currentPrice - entryPrice) *
-                  _calcShares(
-                    config.initialCapital * config.positionSize,
-                    entryPrice,
-                    config,
-                  )
+                    _calcShares(
+                      config.initialCapital * config.positionSize,
+                      entryPrice,
+                      config,
+                    )
               : 0);
       if (currentEquity > peakEquity) peakEquity = currentEquity;
       final dd = peakEquity > 0
@@ -270,8 +284,7 @@ class BacktestEngine {
     final winRate = totalTrades > 0 ? winCount / totalTrades : 0.0;
 
     final totalNetProfit = trades.fold(0.0, (sum, t) => sum + t.netProfit);
-    final totalReturnPct =
-        totalNetProfit / config.initialCapital * 100;
+    final totalReturnPct = totalNetProfit / config.initialCapital * 100;
 
     // Annualized return
     final calendarDays = endDate.difference(startDate).inDays;
@@ -283,10 +296,13 @@ class BacktestEngine {
     // Profit factor
     final totalWins = wins.fold(0.0, (sum, t) => sum + t.netProfit);
     final totalLosses = losses.fold(0.0, (sum, t) => sum + t.netProfit.abs());
-    final profitFactor = totalLosses > 0 ? totalWins / totalLosses : double.infinity;
+    final profitFactor = totalLosses > 0
+        ? totalWins / totalLosses
+        : double.infinity;
 
     // Average holding days
-    final avgHoldingDays = trades
+    final avgHoldingDays =
+        trades
             .map((t) => t.exitBarIndex - t.entryBarIndex)
             .fold(0.0, (sum, d) => sum + d) /
         totalTrades;
@@ -319,10 +335,12 @@ class BacktestEngine {
         .reduce((a, b) => a < b ? a : b);
 
     // Average win/loss percentage
-    final avgWinPct =
-        wins.isNotEmpty ? wins.map((t) => t.returnPct).reduce((a, b) => a + b) / wins.length : 0.0;
-    final avgLossPct =
-        losses.isNotEmpty ? losses.map((t) => t.returnPct).reduce((a, b) => a + b) / losses.length : 0.0;
+    final avgWinPct = wins.isNotEmpty
+        ? wins.map((t) => t.returnPct).reduce((a, b) => a + b) / wins.length
+        : 0.0;
+    final avgLossPct = losses.isNotEmpty
+        ? losses.map((t) => t.returnPct).reduce((a, b) => a + b) / losses.length
+        : 0.0;
 
     return BacktestResult(
       strategyName: strategyName,
@@ -356,8 +374,7 @@ class BacktestEngine {
     if (returns.length < 2) return 0.0;
     final n = returns.length;
     final mean = returns.fold(0.0, (s, r) => s + r) / n;
-    final variance =
-        returns.fold(0.0, (s, r) => s + pow(r - mean, 2)) / n;
+    final variance = returns.fold(0.0, (s, r) => s + pow(r - mean, 2)) / n;
     final stdDev = sqrt(variance);
     if (stdDev == 0) return 0.0;
     // Annualize: assume ~50 trades/year

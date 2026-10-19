@@ -3306,6 +3306,2763 @@ class StrategyReviewsCompanion extends UpdateCompanion<StrategyReviewRow> {
   }
 }
 
+class $StrategySourcesTable extends StrategySources
+    with TableInfo<$StrategySourcesTable, StrategySourceRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StrategySourcesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _strategyIdMeta = const VerificationMeta(
+    'strategyId',
+  );
+  @override
+  late final GeneratedColumn<String> strategyId = GeneratedColumn<String>(
+    'strategy_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES strategies (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _externalRefMeta = const VerificationMeta(
+    'externalRef',
+  );
+  @override
+  late final GeneratedColumn<String> externalRef = GeneratedColumn<String>(
+    'external_ref',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceTypeMeta = const VerificationMeta(
+    'sourceType',
+  );
+  @override
+  late final GeneratedColumn<String> sourceType = GeneratedColumn<String>(
+    'source_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _speakerMeta = const VerificationMeta(
+    'speaker',
+  );
+  @override
+  late final GeneratedColumn<String> speaker = GeneratedColumn<String>(
+    'speaker',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> capturedAt = GeneratedColumn<DateTime>(
+    'captured_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _summaryMeta = const VerificationMeta(
+    'summary',
+  );
+  @override
+  late final GeneratedColumn<String> summary = GeneratedColumn<String>(
+    'summary',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sanitizedTextMeta = const VerificationMeta(
+    'sanitizedText',
+  );
+  @override
+  late final GeneratedColumn<String> sanitizedText = GeneratedColumn<String>(
+    'sanitized_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fingerprintMeta = const VerificationMeta(
+    'fingerprint',
+  );
+  @override
+  late final GeneratedColumn<String> fingerprint = GeneratedColumn<String>(
+    'fingerprint',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    strategyId,
+    externalRef,
+    sourceType,
+    speaker,
+    capturedAt,
+    summary,
+    sanitizedText,
+    fingerprint,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'strategy_sources';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StrategySourceRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('strategy_id')) {
+      context.handle(
+        _strategyIdMeta,
+        strategyId.isAcceptableOrUnknown(data['strategy_id']!, _strategyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyIdMeta);
+    }
+    if (data.containsKey('external_ref')) {
+      context.handle(
+        _externalRefMeta,
+        externalRef.isAcceptableOrUnknown(
+          data['external_ref']!,
+          _externalRefMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_externalRefMeta);
+    }
+    if (data.containsKey('source_type')) {
+      context.handle(
+        _sourceTypeMeta,
+        sourceType.isAcceptableOrUnknown(data['source_type']!, _sourceTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceTypeMeta);
+    }
+    if (data.containsKey('speaker')) {
+      context.handle(
+        _speakerMeta,
+        speaker.isAcceptableOrUnknown(data['speaker']!, _speakerMeta),
+      );
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    }
+    if (data.containsKey('summary')) {
+      context.handle(
+        _summaryMeta,
+        summary.isAcceptableOrUnknown(data['summary']!, _summaryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_summaryMeta);
+    }
+    if (data.containsKey('sanitized_text')) {
+      context.handle(
+        _sanitizedTextMeta,
+        sanitizedText.isAcceptableOrUnknown(
+          data['sanitized_text']!,
+          _sanitizedTextMeta,
+        ),
+      );
+    }
+    if (data.containsKey('fingerprint')) {
+      context.handle(
+        _fingerprintMeta,
+        fingerprint.isAcceptableOrUnknown(
+          data['fingerprint']!,
+          _fingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_fingerprintMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {strategyId, fingerprint},
+  ];
+  @override
+  StrategySourceRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StrategySourceRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      strategyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy_id'],
+      )!,
+      externalRef: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_ref'],
+      )!,
+      sourceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_type'],
+      )!,
+      speaker: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}speaker'],
+      ),
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}captured_at'],
+      ),
+      summary: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}summary'],
+      )!,
+      sanitizedText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sanitized_text'],
+      ),
+      fingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}fingerprint'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StrategySourcesTable createAlias(String alias) {
+    return $StrategySourcesTable(attachedDatabase, alias);
+  }
+}
+
+class StrategySourceRow extends DataClass
+    implements Insertable<StrategySourceRow> {
+  final String id;
+  final String strategyId;
+  final String externalRef;
+  final String sourceType;
+  final String? speaker;
+  final DateTime? capturedAt;
+  final String summary;
+  final String? sanitizedText;
+  final String fingerprint;
+  final DateTime createdAt;
+  const StrategySourceRow({
+    required this.id,
+    required this.strategyId,
+    required this.externalRef,
+    required this.sourceType,
+    this.speaker,
+    this.capturedAt,
+    required this.summary,
+    this.sanitizedText,
+    required this.fingerprint,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['strategy_id'] = Variable<String>(strategyId);
+    map['external_ref'] = Variable<String>(externalRef);
+    map['source_type'] = Variable<String>(sourceType);
+    if (!nullToAbsent || speaker != null) {
+      map['speaker'] = Variable<String>(speaker);
+    }
+    if (!nullToAbsent || capturedAt != null) {
+      map['captured_at'] = Variable<DateTime>(capturedAt);
+    }
+    map['summary'] = Variable<String>(summary);
+    if (!nullToAbsent || sanitizedText != null) {
+      map['sanitized_text'] = Variable<String>(sanitizedText);
+    }
+    map['fingerprint'] = Variable<String>(fingerprint);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  StrategySourcesCompanion toCompanion(bool nullToAbsent) {
+    return StrategySourcesCompanion(
+      id: Value(id),
+      strategyId: Value(strategyId),
+      externalRef: Value(externalRef),
+      sourceType: Value(sourceType),
+      speaker: speaker == null && nullToAbsent
+          ? const Value.absent()
+          : Value(speaker),
+      capturedAt: capturedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(capturedAt),
+      summary: Value(summary),
+      sanitizedText: sanitizedText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sanitizedText),
+      fingerprint: Value(fingerprint),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory StrategySourceRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StrategySourceRow(
+      id: serializer.fromJson<String>(json['id']),
+      strategyId: serializer.fromJson<String>(json['strategyId']),
+      externalRef: serializer.fromJson<String>(json['externalRef']),
+      sourceType: serializer.fromJson<String>(json['sourceType']),
+      speaker: serializer.fromJson<String?>(json['speaker']),
+      capturedAt: serializer.fromJson<DateTime?>(json['capturedAt']),
+      summary: serializer.fromJson<String>(json['summary']),
+      sanitizedText: serializer.fromJson<String?>(json['sanitizedText']),
+      fingerprint: serializer.fromJson<String>(json['fingerprint']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'strategyId': serializer.toJson<String>(strategyId),
+      'externalRef': serializer.toJson<String>(externalRef),
+      'sourceType': serializer.toJson<String>(sourceType),
+      'speaker': serializer.toJson<String?>(speaker),
+      'capturedAt': serializer.toJson<DateTime?>(capturedAt),
+      'summary': serializer.toJson<String>(summary),
+      'sanitizedText': serializer.toJson<String?>(sanitizedText),
+      'fingerprint': serializer.toJson<String>(fingerprint),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  StrategySourceRow copyWith({
+    String? id,
+    String? strategyId,
+    String? externalRef,
+    String? sourceType,
+    Value<String?> speaker = const Value.absent(),
+    Value<DateTime?> capturedAt = const Value.absent(),
+    String? summary,
+    Value<String?> sanitizedText = const Value.absent(),
+    String? fingerprint,
+    DateTime? createdAt,
+  }) => StrategySourceRow(
+    id: id ?? this.id,
+    strategyId: strategyId ?? this.strategyId,
+    externalRef: externalRef ?? this.externalRef,
+    sourceType: sourceType ?? this.sourceType,
+    speaker: speaker.present ? speaker.value : this.speaker,
+    capturedAt: capturedAt.present ? capturedAt.value : this.capturedAt,
+    summary: summary ?? this.summary,
+    sanitizedText: sanitizedText.present
+        ? sanitizedText.value
+        : this.sanitizedText,
+    fingerprint: fingerprint ?? this.fingerprint,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  StrategySourceRow copyWithCompanion(StrategySourcesCompanion data) {
+    return StrategySourceRow(
+      id: data.id.present ? data.id.value : this.id,
+      strategyId: data.strategyId.present
+          ? data.strategyId.value
+          : this.strategyId,
+      externalRef: data.externalRef.present
+          ? data.externalRef.value
+          : this.externalRef,
+      sourceType: data.sourceType.present
+          ? data.sourceType.value
+          : this.sourceType,
+      speaker: data.speaker.present ? data.speaker.value : this.speaker,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+      summary: data.summary.present ? data.summary.value : this.summary,
+      sanitizedText: data.sanitizedText.present
+          ? data.sanitizedText.value
+          : this.sanitizedText,
+      fingerprint: data.fingerprint.present
+          ? data.fingerprint.value
+          : this.fingerprint,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategySourceRow(')
+          ..write('id: $id, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('externalRef: $externalRef, ')
+          ..write('sourceType: $sourceType, ')
+          ..write('speaker: $speaker, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('summary: $summary, ')
+          ..write('sanitizedText: $sanitizedText, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    strategyId,
+    externalRef,
+    sourceType,
+    speaker,
+    capturedAt,
+    summary,
+    sanitizedText,
+    fingerprint,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StrategySourceRow &&
+          other.id == this.id &&
+          other.strategyId == this.strategyId &&
+          other.externalRef == this.externalRef &&
+          other.sourceType == this.sourceType &&
+          other.speaker == this.speaker &&
+          other.capturedAt == this.capturedAt &&
+          other.summary == this.summary &&
+          other.sanitizedText == this.sanitizedText &&
+          other.fingerprint == this.fingerprint &&
+          other.createdAt == this.createdAt);
+}
+
+class StrategySourcesCompanion extends UpdateCompanion<StrategySourceRow> {
+  final Value<String> id;
+  final Value<String> strategyId;
+  final Value<String> externalRef;
+  final Value<String> sourceType;
+  final Value<String?> speaker;
+  final Value<DateTime?> capturedAt;
+  final Value<String> summary;
+  final Value<String?> sanitizedText;
+  final Value<String> fingerprint;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const StrategySourcesCompanion({
+    this.id = const Value.absent(),
+    this.strategyId = const Value.absent(),
+    this.externalRef = const Value.absent(),
+    this.sourceType = const Value.absent(),
+    this.speaker = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.summary = const Value.absent(),
+    this.sanitizedText = const Value.absent(),
+    this.fingerprint = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StrategySourcesCompanion.insert({
+    required String id,
+    required String strategyId,
+    required String externalRef,
+    required String sourceType,
+    this.speaker = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    required String summary,
+    this.sanitizedText = const Value.absent(),
+    required String fingerprint,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       strategyId = Value(strategyId),
+       externalRef = Value(externalRef),
+       sourceType = Value(sourceType),
+       summary = Value(summary),
+       fingerprint = Value(fingerprint),
+       createdAt = Value(createdAt);
+  static Insertable<StrategySourceRow> custom({
+    Expression<String>? id,
+    Expression<String>? strategyId,
+    Expression<String>? externalRef,
+    Expression<String>? sourceType,
+    Expression<String>? speaker,
+    Expression<DateTime>? capturedAt,
+    Expression<String>? summary,
+    Expression<String>? sanitizedText,
+    Expression<String>? fingerprint,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (strategyId != null) 'strategy_id': strategyId,
+      if (externalRef != null) 'external_ref': externalRef,
+      if (sourceType != null) 'source_type': sourceType,
+      if (speaker != null) 'speaker': speaker,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (summary != null) 'summary': summary,
+      if (sanitizedText != null) 'sanitized_text': sanitizedText,
+      if (fingerprint != null) 'fingerprint': fingerprint,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StrategySourcesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? strategyId,
+    Value<String>? externalRef,
+    Value<String>? sourceType,
+    Value<String?>? speaker,
+    Value<DateTime?>? capturedAt,
+    Value<String>? summary,
+    Value<String?>? sanitizedText,
+    Value<String>? fingerprint,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return StrategySourcesCompanion(
+      id: id ?? this.id,
+      strategyId: strategyId ?? this.strategyId,
+      externalRef: externalRef ?? this.externalRef,
+      sourceType: sourceType ?? this.sourceType,
+      speaker: speaker ?? this.speaker,
+      capturedAt: capturedAt ?? this.capturedAt,
+      summary: summary ?? this.summary,
+      sanitizedText: sanitizedText ?? this.sanitizedText,
+      fingerprint: fingerprint ?? this.fingerprint,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (strategyId.present) {
+      map['strategy_id'] = Variable<String>(strategyId.value);
+    }
+    if (externalRef.present) {
+      map['external_ref'] = Variable<String>(externalRef.value);
+    }
+    if (sourceType.present) {
+      map['source_type'] = Variable<String>(sourceType.value);
+    }
+    if (speaker.present) {
+      map['speaker'] = Variable<String>(speaker.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<DateTime>(capturedAt.value);
+    }
+    if (summary.present) {
+      map['summary'] = Variable<String>(summary.value);
+    }
+    if (sanitizedText.present) {
+      map['sanitized_text'] = Variable<String>(sanitizedText.value);
+    }
+    if (fingerprint.present) {
+      map['fingerprint'] = Variable<String>(fingerprint.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategySourcesCompanion(')
+          ..write('id: $id, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('externalRef: $externalRef, ')
+          ..write('sourceType: $sourceType, ')
+          ..write('speaker: $speaker, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('summary: $summary, ')
+          ..write('sanitizedText: $sanitizedText, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StrategyVersionsTable extends StrategyVersions
+    with TableInfo<$StrategyVersionsTable, StrategyVersionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StrategyVersionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _strategyIdMeta = const VerificationMeta(
+    'strategyId',
+  );
+  @override
+  late final GeneratedColumn<String> strategyId = GeneratedColumn<String>(
+    'strategy_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES strategies (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _versionNumberMeta = const VerificationMeta(
+    'versionNumber',
+  );
+  @override
+  late final GeneratedColumn<int> versionNumber = GeneratedColumn<int>(
+    'version_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _strategyTypeMeta = const VerificationMeta(
+    'strategyType',
+  );
+  @override
+  late final GeneratedColumn<String> strategyType = GeneratedColumn<String>(
+    'strategy_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _strategySnapshotJsonMeta =
+      const VerificationMeta('strategySnapshotJson');
+  @override
+  late final GeneratedColumn<String> strategySnapshotJson =
+      GeneratedColumn<String>(
+        'strategy_snapshot_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _packageJsonMeta = const VerificationMeta(
+    'packageJson',
+  );
+  @override
+  late final GeneratedColumn<String> packageJson = GeneratedColumn<String>(
+    'package_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _applicabilityJsonMeta = const VerificationMeta(
+    'applicabilityJson',
+  );
+  @override
+  late final GeneratedColumn<String> applicabilityJson =
+      GeneratedColumn<String>(
+        'applicability_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _riskNotesJsonMeta = const VerificationMeta(
+    'riskNotesJson',
+  );
+  @override
+  late final GeneratedColumn<String> riskNotesJson = GeneratedColumn<String>(
+    'risk_notes_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pendingQuestionsJsonMeta =
+      const VerificationMeta('pendingQuestionsJson');
+  @override
+  late final GeneratedColumn<String> pendingQuestionsJson =
+      GeneratedColumn<String>(
+        'pending_questions_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _compatibilityIssuesJsonMeta =
+      const VerificationMeta('compatibilityIssuesJson');
+  @override
+  late final GeneratedColumn<String> compatibilityIssuesJson =
+      GeneratedColumn<String>(
+        'compatibility_issues_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _previousVersionIdMeta = const VerificationMeta(
+    'previousVersionId',
+  );
+  @override
+  late final GeneratedColumn<String> previousVersionId =
+      GeneratedColumn<String>(
+        'previous_version_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    strategyId,
+    versionNumber,
+    status,
+    strategyType,
+    strategySnapshotJson,
+    packageJson,
+    applicabilityJson,
+    riskNotesJson,
+    pendingQuestionsJson,
+    compatibilityIssuesJson,
+    previousVersionId,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'strategy_versions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StrategyVersionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('strategy_id')) {
+      context.handle(
+        _strategyIdMeta,
+        strategyId.isAcceptableOrUnknown(data['strategy_id']!, _strategyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyIdMeta);
+    }
+    if (data.containsKey('version_number')) {
+      context.handle(
+        _versionNumberMeta,
+        versionNumber.isAcceptableOrUnknown(
+          data['version_number']!,
+          _versionNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_versionNumberMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('strategy_type')) {
+      context.handle(
+        _strategyTypeMeta,
+        strategyType.isAcceptableOrUnknown(
+          data['strategy_type']!,
+          _strategyTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyTypeMeta);
+    }
+    if (data.containsKey('strategy_snapshot_json')) {
+      context.handle(
+        _strategySnapshotJsonMeta,
+        strategySnapshotJson.isAcceptableOrUnknown(
+          data['strategy_snapshot_json']!,
+          _strategySnapshotJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_strategySnapshotJsonMeta);
+    }
+    if (data.containsKey('package_json')) {
+      context.handle(
+        _packageJsonMeta,
+        packageJson.isAcceptableOrUnknown(
+          data['package_json']!,
+          _packageJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('applicability_json')) {
+      context.handle(
+        _applicabilityJsonMeta,
+        applicabilityJson.isAcceptableOrUnknown(
+          data['applicability_json']!,
+          _applicabilityJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_applicabilityJsonMeta);
+    }
+    if (data.containsKey('risk_notes_json')) {
+      context.handle(
+        _riskNotesJsonMeta,
+        riskNotesJson.isAcceptableOrUnknown(
+          data['risk_notes_json']!,
+          _riskNotesJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_riskNotesJsonMeta);
+    }
+    if (data.containsKey('pending_questions_json')) {
+      context.handle(
+        _pendingQuestionsJsonMeta,
+        pendingQuestionsJson.isAcceptableOrUnknown(
+          data['pending_questions_json']!,
+          _pendingQuestionsJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_pendingQuestionsJsonMeta);
+    }
+    if (data.containsKey('compatibility_issues_json')) {
+      context.handle(
+        _compatibilityIssuesJsonMeta,
+        compatibilityIssuesJson.isAcceptableOrUnknown(
+          data['compatibility_issues_json']!,
+          _compatibilityIssuesJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_compatibilityIssuesJsonMeta);
+    }
+    if (data.containsKey('previous_version_id')) {
+      context.handle(
+        _previousVersionIdMeta,
+        previousVersionId.isAcceptableOrUnknown(
+          data['previous_version_id']!,
+          _previousVersionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {strategyId, versionNumber},
+  ];
+  @override
+  StrategyVersionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StrategyVersionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      strategyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy_id'],
+      )!,
+      versionNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version_number'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      strategyType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy_type'],
+      )!,
+      strategySnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy_snapshot_json'],
+      )!,
+      packageJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}package_json'],
+      ),
+      applicabilityJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}applicability_json'],
+      )!,
+      riskNotesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}risk_notes_json'],
+      )!,
+      pendingQuestionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_questions_json'],
+      )!,
+      compatibilityIssuesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}compatibility_issues_json'],
+      )!,
+      previousVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_version_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StrategyVersionsTable createAlias(String alias) {
+    return $StrategyVersionsTable(attachedDatabase, alias);
+  }
+}
+
+class StrategyVersionRow extends DataClass
+    implements Insertable<StrategyVersionRow> {
+  final String id;
+  final String strategyId;
+  final int versionNumber;
+  final String status;
+  final String strategyType;
+  final String strategySnapshotJson;
+  final String? packageJson;
+  final String applicabilityJson;
+  final String riskNotesJson;
+  final String pendingQuestionsJson;
+  final String compatibilityIssuesJson;
+  final String? previousVersionId;
+  final DateTime createdAt;
+  const StrategyVersionRow({
+    required this.id,
+    required this.strategyId,
+    required this.versionNumber,
+    required this.status,
+    required this.strategyType,
+    required this.strategySnapshotJson,
+    this.packageJson,
+    required this.applicabilityJson,
+    required this.riskNotesJson,
+    required this.pendingQuestionsJson,
+    required this.compatibilityIssuesJson,
+    this.previousVersionId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['strategy_id'] = Variable<String>(strategyId);
+    map['version_number'] = Variable<int>(versionNumber);
+    map['status'] = Variable<String>(status);
+    map['strategy_type'] = Variable<String>(strategyType);
+    map['strategy_snapshot_json'] = Variable<String>(strategySnapshotJson);
+    if (!nullToAbsent || packageJson != null) {
+      map['package_json'] = Variable<String>(packageJson);
+    }
+    map['applicability_json'] = Variable<String>(applicabilityJson);
+    map['risk_notes_json'] = Variable<String>(riskNotesJson);
+    map['pending_questions_json'] = Variable<String>(pendingQuestionsJson);
+    map['compatibility_issues_json'] = Variable<String>(
+      compatibilityIssuesJson,
+    );
+    if (!nullToAbsent || previousVersionId != null) {
+      map['previous_version_id'] = Variable<String>(previousVersionId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  StrategyVersionsCompanion toCompanion(bool nullToAbsent) {
+    return StrategyVersionsCompanion(
+      id: Value(id),
+      strategyId: Value(strategyId),
+      versionNumber: Value(versionNumber),
+      status: Value(status),
+      strategyType: Value(strategyType),
+      strategySnapshotJson: Value(strategySnapshotJson),
+      packageJson: packageJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageJson),
+      applicabilityJson: Value(applicabilityJson),
+      riskNotesJson: Value(riskNotesJson),
+      pendingQuestionsJson: Value(pendingQuestionsJson),
+      compatibilityIssuesJson: Value(compatibilityIssuesJson),
+      previousVersionId: previousVersionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(previousVersionId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory StrategyVersionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StrategyVersionRow(
+      id: serializer.fromJson<String>(json['id']),
+      strategyId: serializer.fromJson<String>(json['strategyId']),
+      versionNumber: serializer.fromJson<int>(json['versionNumber']),
+      status: serializer.fromJson<String>(json['status']),
+      strategyType: serializer.fromJson<String>(json['strategyType']),
+      strategySnapshotJson: serializer.fromJson<String>(
+        json['strategySnapshotJson'],
+      ),
+      packageJson: serializer.fromJson<String?>(json['packageJson']),
+      applicabilityJson: serializer.fromJson<String>(json['applicabilityJson']),
+      riskNotesJson: serializer.fromJson<String>(json['riskNotesJson']),
+      pendingQuestionsJson: serializer.fromJson<String>(
+        json['pendingQuestionsJson'],
+      ),
+      compatibilityIssuesJson: serializer.fromJson<String>(
+        json['compatibilityIssuesJson'],
+      ),
+      previousVersionId: serializer.fromJson<String?>(
+        json['previousVersionId'],
+      ),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'strategyId': serializer.toJson<String>(strategyId),
+      'versionNumber': serializer.toJson<int>(versionNumber),
+      'status': serializer.toJson<String>(status),
+      'strategyType': serializer.toJson<String>(strategyType),
+      'strategySnapshotJson': serializer.toJson<String>(strategySnapshotJson),
+      'packageJson': serializer.toJson<String?>(packageJson),
+      'applicabilityJson': serializer.toJson<String>(applicabilityJson),
+      'riskNotesJson': serializer.toJson<String>(riskNotesJson),
+      'pendingQuestionsJson': serializer.toJson<String>(pendingQuestionsJson),
+      'compatibilityIssuesJson': serializer.toJson<String>(
+        compatibilityIssuesJson,
+      ),
+      'previousVersionId': serializer.toJson<String?>(previousVersionId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  StrategyVersionRow copyWith({
+    String? id,
+    String? strategyId,
+    int? versionNumber,
+    String? status,
+    String? strategyType,
+    String? strategySnapshotJson,
+    Value<String?> packageJson = const Value.absent(),
+    String? applicabilityJson,
+    String? riskNotesJson,
+    String? pendingQuestionsJson,
+    String? compatibilityIssuesJson,
+    Value<String?> previousVersionId = const Value.absent(),
+    DateTime? createdAt,
+  }) => StrategyVersionRow(
+    id: id ?? this.id,
+    strategyId: strategyId ?? this.strategyId,
+    versionNumber: versionNumber ?? this.versionNumber,
+    status: status ?? this.status,
+    strategyType: strategyType ?? this.strategyType,
+    strategySnapshotJson: strategySnapshotJson ?? this.strategySnapshotJson,
+    packageJson: packageJson.present ? packageJson.value : this.packageJson,
+    applicabilityJson: applicabilityJson ?? this.applicabilityJson,
+    riskNotesJson: riskNotesJson ?? this.riskNotesJson,
+    pendingQuestionsJson: pendingQuestionsJson ?? this.pendingQuestionsJson,
+    compatibilityIssuesJson:
+        compatibilityIssuesJson ?? this.compatibilityIssuesJson,
+    previousVersionId: previousVersionId.present
+        ? previousVersionId.value
+        : this.previousVersionId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  StrategyVersionRow copyWithCompanion(StrategyVersionsCompanion data) {
+    return StrategyVersionRow(
+      id: data.id.present ? data.id.value : this.id,
+      strategyId: data.strategyId.present
+          ? data.strategyId.value
+          : this.strategyId,
+      versionNumber: data.versionNumber.present
+          ? data.versionNumber.value
+          : this.versionNumber,
+      status: data.status.present ? data.status.value : this.status,
+      strategyType: data.strategyType.present
+          ? data.strategyType.value
+          : this.strategyType,
+      strategySnapshotJson: data.strategySnapshotJson.present
+          ? data.strategySnapshotJson.value
+          : this.strategySnapshotJson,
+      packageJson: data.packageJson.present
+          ? data.packageJson.value
+          : this.packageJson,
+      applicabilityJson: data.applicabilityJson.present
+          ? data.applicabilityJson.value
+          : this.applicabilityJson,
+      riskNotesJson: data.riskNotesJson.present
+          ? data.riskNotesJson.value
+          : this.riskNotesJson,
+      pendingQuestionsJson: data.pendingQuestionsJson.present
+          ? data.pendingQuestionsJson.value
+          : this.pendingQuestionsJson,
+      compatibilityIssuesJson: data.compatibilityIssuesJson.present
+          ? data.compatibilityIssuesJson.value
+          : this.compatibilityIssuesJson,
+      previousVersionId: data.previousVersionId.present
+          ? data.previousVersionId.value
+          : this.previousVersionId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategyVersionRow(')
+          ..write('id: $id, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('versionNumber: $versionNumber, ')
+          ..write('status: $status, ')
+          ..write('strategyType: $strategyType, ')
+          ..write('strategySnapshotJson: $strategySnapshotJson, ')
+          ..write('packageJson: $packageJson, ')
+          ..write('applicabilityJson: $applicabilityJson, ')
+          ..write('riskNotesJson: $riskNotesJson, ')
+          ..write('pendingQuestionsJson: $pendingQuestionsJson, ')
+          ..write('compatibilityIssuesJson: $compatibilityIssuesJson, ')
+          ..write('previousVersionId: $previousVersionId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    strategyId,
+    versionNumber,
+    status,
+    strategyType,
+    strategySnapshotJson,
+    packageJson,
+    applicabilityJson,
+    riskNotesJson,
+    pendingQuestionsJson,
+    compatibilityIssuesJson,
+    previousVersionId,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StrategyVersionRow &&
+          other.id == this.id &&
+          other.strategyId == this.strategyId &&
+          other.versionNumber == this.versionNumber &&
+          other.status == this.status &&
+          other.strategyType == this.strategyType &&
+          other.strategySnapshotJson == this.strategySnapshotJson &&
+          other.packageJson == this.packageJson &&
+          other.applicabilityJson == this.applicabilityJson &&
+          other.riskNotesJson == this.riskNotesJson &&
+          other.pendingQuestionsJson == this.pendingQuestionsJson &&
+          other.compatibilityIssuesJson == this.compatibilityIssuesJson &&
+          other.previousVersionId == this.previousVersionId &&
+          other.createdAt == this.createdAt);
+}
+
+class StrategyVersionsCompanion extends UpdateCompanion<StrategyVersionRow> {
+  final Value<String> id;
+  final Value<String> strategyId;
+  final Value<int> versionNumber;
+  final Value<String> status;
+  final Value<String> strategyType;
+  final Value<String> strategySnapshotJson;
+  final Value<String?> packageJson;
+  final Value<String> applicabilityJson;
+  final Value<String> riskNotesJson;
+  final Value<String> pendingQuestionsJson;
+  final Value<String> compatibilityIssuesJson;
+  final Value<String?> previousVersionId;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const StrategyVersionsCompanion({
+    this.id = const Value.absent(),
+    this.strategyId = const Value.absent(),
+    this.versionNumber = const Value.absent(),
+    this.status = const Value.absent(),
+    this.strategyType = const Value.absent(),
+    this.strategySnapshotJson = const Value.absent(),
+    this.packageJson = const Value.absent(),
+    this.applicabilityJson = const Value.absent(),
+    this.riskNotesJson = const Value.absent(),
+    this.pendingQuestionsJson = const Value.absent(),
+    this.compatibilityIssuesJson = const Value.absent(),
+    this.previousVersionId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StrategyVersionsCompanion.insert({
+    required String id,
+    required String strategyId,
+    required int versionNumber,
+    required String status,
+    required String strategyType,
+    required String strategySnapshotJson,
+    this.packageJson = const Value.absent(),
+    required String applicabilityJson,
+    required String riskNotesJson,
+    required String pendingQuestionsJson,
+    required String compatibilityIssuesJson,
+    this.previousVersionId = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       strategyId = Value(strategyId),
+       versionNumber = Value(versionNumber),
+       status = Value(status),
+       strategyType = Value(strategyType),
+       strategySnapshotJson = Value(strategySnapshotJson),
+       applicabilityJson = Value(applicabilityJson),
+       riskNotesJson = Value(riskNotesJson),
+       pendingQuestionsJson = Value(pendingQuestionsJson),
+       compatibilityIssuesJson = Value(compatibilityIssuesJson),
+       createdAt = Value(createdAt);
+  static Insertable<StrategyVersionRow> custom({
+    Expression<String>? id,
+    Expression<String>? strategyId,
+    Expression<int>? versionNumber,
+    Expression<String>? status,
+    Expression<String>? strategyType,
+    Expression<String>? strategySnapshotJson,
+    Expression<String>? packageJson,
+    Expression<String>? applicabilityJson,
+    Expression<String>? riskNotesJson,
+    Expression<String>? pendingQuestionsJson,
+    Expression<String>? compatibilityIssuesJson,
+    Expression<String>? previousVersionId,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (strategyId != null) 'strategy_id': strategyId,
+      if (versionNumber != null) 'version_number': versionNumber,
+      if (status != null) 'status': status,
+      if (strategyType != null) 'strategy_type': strategyType,
+      if (strategySnapshotJson != null)
+        'strategy_snapshot_json': strategySnapshotJson,
+      if (packageJson != null) 'package_json': packageJson,
+      if (applicabilityJson != null) 'applicability_json': applicabilityJson,
+      if (riskNotesJson != null) 'risk_notes_json': riskNotesJson,
+      if (pendingQuestionsJson != null)
+        'pending_questions_json': pendingQuestionsJson,
+      if (compatibilityIssuesJson != null)
+        'compatibility_issues_json': compatibilityIssuesJson,
+      if (previousVersionId != null) 'previous_version_id': previousVersionId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StrategyVersionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? strategyId,
+    Value<int>? versionNumber,
+    Value<String>? status,
+    Value<String>? strategyType,
+    Value<String>? strategySnapshotJson,
+    Value<String?>? packageJson,
+    Value<String>? applicabilityJson,
+    Value<String>? riskNotesJson,
+    Value<String>? pendingQuestionsJson,
+    Value<String>? compatibilityIssuesJson,
+    Value<String?>? previousVersionId,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return StrategyVersionsCompanion(
+      id: id ?? this.id,
+      strategyId: strategyId ?? this.strategyId,
+      versionNumber: versionNumber ?? this.versionNumber,
+      status: status ?? this.status,
+      strategyType: strategyType ?? this.strategyType,
+      strategySnapshotJson: strategySnapshotJson ?? this.strategySnapshotJson,
+      packageJson: packageJson ?? this.packageJson,
+      applicabilityJson: applicabilityJson ?? this.applicabilityJson,
+      riskNotesJson: riskNotesJson ?? this.riskNotesJson,
+      pendingQuestionsJson: pendingQuestionsJson ?? this.pendingQuestionsJson,
+      compatibilityIssuesJson:
+          compatibilityIssuesJson ?? this.compatibilityIssuesJson,
+      previousVersionId: previousVersionId ?? this.previousVersionId,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (strategyId.present) {
+      map['strategy_id'] = Variable<String>(strategyId.value);
+    }
+    if (versionNumber.present) {
+      map['version_number'] = Variable<int>(versionNumber.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (strategyType.present) {
+      map['strategy_type'] = Variable<String>(strategyType.value);
+    }
+    if (strategySnapshotJson.present) {
+      map['strategy_snapshot_json'] = Variable<String>(
+        strategySnapshotJson.value,
+      );
+    }
+    if (packageJson.present) {
+      map['package_json'] = Variable<String>(packageJson.value);
+    }
+    if (applicabilityJson.present) {
+      map['applicability_json'] = Variable<String>(applicabilityJson.value);
+    }
+    if (riskNotesJson.present) {
+      map['risk_notes_json'] = Variable<String>(riskNotesJson.value);
+    }
+    if (pendingQuestionsJson.present) {
+      map['pending_questions_json'] = Variable<String>(
+        pendingQuestionsJson.value,
+      );
+    }
+    if (compatibilityIssuesJson.present) {
+      map['compatibility_issues_json'] = Variable<String>(
+        compatibilityIssuesJson.value,
+      );
+    }
+    if (previousVersionId.present) {
+      map['previous_version_id'] = Variable<String>(previousVersionId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategyVersionsCompanion(')
+          ..write('id: $id, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('versionNumber: $versionNumber, ')
+          ..write('status: $status, ')
+          ..write('strategyType: $strategyType, ')
+          ..write('strategySnapshotJson: $strategySnapshotJson, ')
+          ..write('packageJson: $packageJson, ')
+          ..write('applicabilityJson: $applicabilityJson, ')
+          ..write('riskNotesJson: $riskNotesJson, ')
+          ..write('pendingQuestionsJson: $pendingQuestionsJson, ')
+          ..write('compatibilityIssuesJson: $compatibilityIssuesJson, ')
+          ..write('previousVersionId: $previousVersionId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StrategyVersionSourcesTable extends StrategyVersionSources
+    with TableInfo<$StrategyVersionSourcesTable, StrategyVersionSourceRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StrategyVersionSourcesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _versionIdMeta = const VerificationMeta(
+    'versionId',
+  );
+  @override
+  late final GeneratedColumn<String> versionId = GeneratedColumn<String>(
+    'version_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES strategy_versions (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sourceIdMeta = const VerificationMeta(
+    'sourceId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+    'source_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES strategy_sources (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _ruleIdsJsonMeta = const VerificationMeta(
+    'ruleIdsJson',
+  );
+  @override
+  late final GeneratedColumn<String> ruleIdsJson = GeneratedColumn<String>(
+    'rule_ids_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [versionId, sourceId, ruleIdsJson];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'strategy_version_sources';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StrategyVersionSourceRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('version_id')) {
+      context.handle(
+        _versionIdMeta,
+        versionId.isAcceptableOrUnknown(data['version_id']!, _versionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_versionIdMeta);
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(
+        _sourceIdMeta,
+        sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceIdMeta);
+    }
+    if (data.containsKey('rule_ids_json')) {
+      context.handle(
+        _ruleIdsJsonMeta,
+        ruleIdsJson.isAcceptableOrUnknown(
+          data['rule_ids_json']!,
+          _ruleIdsJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_ruleIdsJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {versionId, sourceId};
+  @override
+  StrategyVersionSourceRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StrategyVersionSourceRow(
+      versionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}version_id'],
+      )!,
+      sourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_id'],
+      )!,
+      ruleIdsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rule_ids_json'],
+      )!,
+    );
+  }
+
+  @override
+  $StrategyVersionSourcesTable createAlias(String alias) {
+    return $StrategyVersionSourcesTable(attachedDatabase, alias);
+  }
+}
+
+class StrategyVersionSourceRow extends DataClass
+    implements Insertable<StrategyVersionSourceRow> {
+  final String versionId;
+  final String sourceId;
+  final String ruleIdsJson;
+  const StrategyVersionSourceRow({
+    required this.versionId,
+    required this.sourceId,
+    required this.ruleIdsJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['version_id'] = Variable<String>(versionId);
+    map['source_id'] = Variable<String>(sourceId);
+    map['rule_ids_json'] = Variable<String>(ruleIdsJson);
+    return map;
+  }
+
+  StrategyVersionSourcesCompanion toCompanion(bool nullToAbsent) {
+    return StrategyVersionSourcesCompanion(
+      versionId: Value(versionId),
+      sourceId: Value(sourceId),
+      ruleIdsJson: Value(ruleIdsJson),
+    );
+  }
+
+  factory StrategyVersionSourceRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StrategyVersionSourceRow(
+      versionId: serializer.fromJson<String>(json['versionId']),
+      sourceId: serializer.fromJson<String>(json['sourceId']),
+      ruleIdsJson: serializer.fromJson<String>(json['ruleIdsJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'versionId': serializer.toJson<String>(versionId),
+      'sourceId': serializer.toJson<String>(sourceId),
+      'ruleIdsJson': serializer.toJson<String>(ruleIdsJson),
+    };
+  }
+
+  StrategyVersionSourceRow copyWith({
+    String? versionId,
+    String? sourceId,
+    String? ruleIdsJson,
+  }) => StrategyVersionSourceRow(
+    versionId: versionId ?? this.versionId,
+    sourceId: sourceId ?? this.sourceId,
+    ruleIdsJson: ruleIdsJson ?? this.ruleIdsJson,
+  );
+  StrategyVersionSourceRow copyWithCompanion(
+    StrategyVersionSourcesCompanion data,
+  ) {
+    return StrategyVersionSourceRow(
+      versionId: data.versionId.present ? data.versionId.value : this.versionId,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      ruleIdsJson: data.ruleIdsJson.present
+          ? data.ruleIdsJson.value
+          : this.ruleIdsJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategyVersionSourceRow(')
+          ..write('versionId: $versionId, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('ruleIdsJson: $ruleIdsJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(versionId, sourceId, ruleIdsJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StrategyVersionSourceRow &&
+          other.versionId == this.versionId &&
+          other.sourceId == this.sourceId &&
+          other.ruleIdsJson == this.ruleIdsJson);
+}
+
+class StrategyVersionSourcesCompanion
+    extends UpdateCompanion<StrategyVersionSourceRow> {
+  final Value<String> versionId;
+  final Value<String> sourceId;
+  final Value<String> ruleIdsJson;
+  final Value<int> rowid;
+  const StrategyVersionSourcesCompanion({
+    this.versionId = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.ruleIdsJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StrategyVersionSourcesCompanion.insert({
+    required String versionId,
+    required String sourceId,
+    required String ruleIdsJson,
+    this.rowid = const Value.absent(),
+  }) : versionId = Value(versionId),
+       sourceId = Value(sourceId),
+       ruleIdsJson = Value(ruleIdsJson);
+  static Insertable<StrategyVersionSourceRow> custom({
+    Expression<String>? versionId,
+    Expression<String>? sourceId,
+    Expression<String>? ruleIdsJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (versionId != null) 'version_id': versionId,
+      if (sourceId != null) 'source_id': sourceId,
+      if (ruleIdsJson != null) 'rule_ids_json': ruleIdsJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StrategyVersionSourcesCompanion copyWith({
+    Value<String>? versionId,
+    Value<String>? sourceId,
+    Value<String>? ruleIdsJson,
+    Value<int>? rowid,
+  }) {
+    return StrategyVersionSourcesCompanion(
+      versionId: versionId ?? this.versionId,
+      sourceId: sourceId ?? this.sourceId,
+      ruleIdsJson: ruleIdsJson ?? this.ruleIdsJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (versionId.present) {
+      map['version_id'] = Variable<String>(versionId.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (ruleIdsJson.present) {
+      map['rule_ids_json'] = Variable<String>(ruleIdsJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategyVersionSourcesCompanion(')
+          ..write('versionId: $versionId, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('ruleIdsJson: $ruleIdsJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StrategyBacktestRunsTable extends StrategyBacktestRuns
+    with TableInfo<$StrategyBacktestRunsTable, StrategyBacktestRunRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StrategyBacktestRunsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _strategyIdMeta = const VerificationMeta(
+    'strategyId',
+  );
+  @override
+  late final GeneratedColumn<String> strategyId = GeneratedColumn<String>(
+    'strategy_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES strategies (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _strategyVersionIdMeta = const VerificationMeta(
+    'strategyVersionId',
+  );
+  @override
+  late final GeneratedColumn<String> strategyVersionId =
+      GeneratedColumn<String>(
+        'strategy_version_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES strategy_versions (id) ON DELETE CASCADE',
+        ),
+      );
+  static const VerificationMeta _strategyVersionNumberMeta =
+      const VerificationMeta('strategyVersionNumber');
+  @override
+  late final GeneratedColumn<int> strategyVersionNumber = GeneratedColumn<int>(
+    'strategy_version_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stockCodeMeta = const VerificationMeta(
+    'stockCode',
+  );
+  @override
+  late final GeneratedColumn<String> stockCode = GeneratedColumn<String>(
+    'stock_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stockNameMeta = const VerificationMeta(
+    'stockName',
+  );
+  @override
+  late final GeneratedColumn<String> stockName = GeneratedColumn<String>(
+    'stock_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _marketMeta = const VerificationMeta('market');
+  @override
+  late final GeneratedColumn<String> market = GeneratedColumn<String>(
+    'market',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _configJsonMeta = const VerificationMeta(
+    'configJson',
+  );
+  @override
+  late final GeneratedColumn<String> configJson = GeneratedColumn<String>(
+    'config_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _resultJsonMeta = const VerificationMeta(
+    'resultJson',
+  );
+  @override
+  late final GeneratedColumn<String> resultJson = GeneratedColumn<String>(
+    'result_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _adjustmentModeMeta = const VerificationMeta(
+    'adjustmentMode',
+  );
+  @override
+  late final GeneratedColumn<String> adjustmentMode = GeneratedColumn<String>(
+    'adjustment_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataFingerprintMeta = const VerificationMeta(
+    'dataFingerprint',
+  );
+  @override
+  late final GeneratedColumn<String> dataFingerprint = GeneratedColumn<String>(
+    'data_fingerprint',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataStartMeta = const VerificationMeta(
+    'dataStart',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataStart = GeneratedColumn<DateTime>(
+    'data_start',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dataEndMeta = const VerificationMeta(
+    'dataEnd',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataEnd = GeneratedColumn<DateTime>(
+    'data_end',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dataAsOfMeta = const VerificationMeta(
+    'dataAsOf',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dataAsOf = GeneratedColumn<DateTime>(
+    'data_as_of',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _barsProcessedMeta = const VerificationMeta(
+    'barsProcessed',
+  );
+  @override
+  late final GeneratedColumn<int> barsProcessed = GeneratedColumn<int>(
+    'bars_processed',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sampleCountMeta = const VerificationMeta(
+    'sampleCount',
+  );
+  @override
+  late final GeneratedColumn<int> sampleCount = GeneratedColumn<int>(
+    'sample_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    strategyId,
+    strategyVersionId,
+    strategyVersionNumber,
+    stockCode,
+    stockName,
+    market,
+    configJson,
+    resultJson,
+    adjustmentMode,
+    dataFingerprint,
+    dataStart,
+    dataEnd,
+    dataAsOf,
+    barsProcessed,
+    sampleCount,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'strategy_backtest_runs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StrategyBacktestRunRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('strategy_id')) {
+      context.handle(
+        _strategyIdMeta,
+        strategyId.isAcceptableOrUnknown(data['strategy_id']!, _strategyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyIdMeta);
+    }
+    if (data.containsKey('strategy_version_id')) {
+      context.handle(
+        _strategyVersionIdMeta,
+        strategyVersionId.isAcceptableOrUnknown(
+          data['strategy_version_id']!,
+          _strategyVersionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyVersionIdMeta);
+    }
+    if (data.containsKey('strategy_version_number')) {
+      context.handle(
+        _strategyVersionNumberMeta,
+        strategyVersionNumber.isAcceptableOrUnknown(
+          data['strategy_version_number']!,
+          _strategyVersionNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_strategyVersionNumberMeta);
+    }
+    if (data.containsKey('stock_code')) {
+      context.handle(
+        _stockCodeMeta,
+        stockCode.isAcceptableOrUnknown(data['stock_code']!, _stockCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stockCodeMeta);
+    }
+    if (data.containsKey('stock_name')) {
+      context.handle(
+        _stockNameMeta,
+        stockName.isAcceptableOrUnknown(data['stock_name']!, _stockNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stockNameMeta);
+    }
+    if (data.containsKey('market')) {
+      context.handle(
+        _marketMeta,
+        market.isAcceptableOrUnknown(data['market']!, _marketMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_marketMeta);
+    }
+    if (data.containsKey('config_json')) {
+      context.handle(
+        _configJsonMeta,
+        configJson.isAcceptableOrUnknown(data['config_json']!, _configJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_configJsonMeta);
+    }
+    if (data.containsKey('result_json')) {
+      context.handle(
+        _resultJsonMeta,
+        resultJson.isAcceptableOrUnknown(data['result_json']!, _resultJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_resultJsonMeta);
+    }
+    if (data.containsKey('adjustment_mode')) {
+      context.handle(
+        _adjustmentModeMeta,
+        adjustmentMode.isAcceptableOrUnknown(
+          data['adjustment_mode']!,
+          _adjustmentModeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_adjustmentModeMeta);
+    }
+    if (data.containsKey('data_fingerprint')) {
+      context.handle(
+        _dataFingerprintMeta,
+        dataFingerprint.isAcceptableOrUnknown(
+          data['data_fingerprint']!,
+          _dataFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dataFingerprintMeta);
+    }
+    if (data.containsKey('data_start')) {
+      context.handle(
+        _dataStartMeta,
+        dataStart.isAcceptableOrUnknown(data['data_start']!, _dataStartMeta),
+      );
+    }
+    if (data.containsKey('data_end')) {
+      context.handle(
+        _dataEndMeta,
+        dataEnd.isAcceptableOrUnknown(data['data_end']!, _dataEndMeta),
+      );
+    }
+    if (data.containsKey('data_as_of')) {
+      context.handle(
+        _dataAsOfMeta,
+        dataAsOf.isAcceptableOrUnknown(data['data_as_of']!, _dataAsOfMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataAsOfMeta);
+    }
+    if (data.containsKey('bars_processed')) {
+      context.handle(
+        _barsProcessedMeta,
+        barsProcessed.isAcceptableOrUnknown(
+          data['bars_processed']!,
+          _barsProcessedMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_barsProcessedMeta);
+    }
+    if (data.containsKey('sample_count')) {
+      context.handle(
+        _sampleCountMeta,
+        sampleCount.isAcceptableOrUnknown(
+          data['sample_count']!,
+          _sampleCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sampleCountMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StrategyBacktestRunRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StrategyBacktestRunRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      strategyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy_id'],
+      )!,
+      strategyVersionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strategy_version_id'],
+      )!,
+      strategyVersionNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}strategy_version_number'],
+      )!,
+      stockCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stock_code'],
+      )!,
+      stockName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stock_name'],
+      )!,
+      market: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}market'],
+      )!,
+      configJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}config_json'],
+      )!,
+      resultJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}result_json'],
+      )!,
+      adjustmentMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}adjustment_mode'],
+      )!,
+      dataFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_fingerprint'],
+      )!,
+      dataStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_start'],
+      ),
+      dataEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_end'],
+      ),
+      dataAsOf: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_as_of'],
+      )!,
+      barsProcessed: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bars_processed'],
+      )!,
+      sampleCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sample_count'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $StrategyBacktestRunsTable createAlias(String alias) {
+    return $StrategyBacktestRunsTable(attachedDatabase, alias);
+  }
+}
+
+class StrategyBacktestRunRow extends DataClass
+    implements Insertable<StrategyBacktestRunRow> {
+  final String id;
+  final String strategyId;
+  final String strategyVersionId;
+  final int strategyVersionNumber;
+  final String stockCode;
+  final String stockName;
+  final String market;
+  final String configJson;
+  final String resultJson;
+  final String adjustmentMode;
+  final String dataFingerprint;
+  final DateTime? dataStart;
+  final DateTime? dataEnd;
+  final DateTime dataAsOf;
+  final int barsProcessed;
+  final int sampleCount;
+  final DateTime createdAt;
+  const StrategyBacktestRunRow({
+    required this.id,
+    required this.strategyId,
+    required this.strategyVersionId,
+    required this.strategyVersionNumber,
+    required this.stockCode,
+    required this.stockName,
+    required this.market,
+    required this.configJson,
+    required this.resultJson,
+    required this.adjustmentMode,
+    required this.dataFingerprint,
+    this.dataStart,
+    this.dataEnd,
+    required this.dataAsOf,
+    required this.barsProcessed,
+    required this.sampleCount,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['strategy_id'] = Variable<String>(strategyId);
+    map['strategy_version_id'] = Variable<String>(strategyVersionId);
+    map['strategy_version_number'] = Variable<int>(strategyVersionNumber);
+    map['stock_code'] = Variable<String>(stockCode);
+    map['stock_name'] = Variable<String>(stockName);
+    map['market'] = Variable<String>(market);
+    map['config_json'] = Variable<String>(configJson);
+    map['result_json'] = Variable<String>(resultJson);
+    map['adjustment_mode'] = Variable<String>(adjustmentMode);
+    map['data_fingerprint'] = Variable<String>(dataFingerprint);
+    if (!nullToAbsent || dataStart != null) {
+      map['data_start'] = Variable<DateTime>(dataStart);
+    }
+    if (!nullToAbsent || dataEnd != null) {
+      map['data_end'] = Variable<DateTime>(dataEnd);
+    }
+    map['data_as_of'] = Variable<DateTime>(dataAsOf);
+    map['bars_processed'] = Variable<int>(barsProcessed);
+    map['sample_count'] = Variable<int>(sampleCount);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  StrategyBacktestRunsCompanion toCompanion(bool nullToAbsent) {
+    return StrategyBacktestRunsCompanion(
+      id: Value(id),
+      strategyId: Value(strategyId),
+      strategyVersionId: Value(strategyVersionId),
+      strategyVersionNumber: Value(strategyVersionNumber),
+      stockCode: Value(stockCode),
+      stockName: Value(stockName),
+      market: Value(market),
+      configJson: Value(configJson),
+      resultJson: Value(resultJson),
+      adjustmentMode: Value(adjustmentMode),
+      dataFingerprint: Value(dataFingerprint),
+      dataStart: dataStart == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataStart),
+      dataEnd: dataEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataEnd),
+      dataAsOf: Value(dataAsOf),
+      barsProcessed: Value(barsProcessed),
+      sampleCount: Value(sampleCount),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory StrategyBacktestRunRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StrategyBacktestRunRow(
+      id: serializer.fromJson<String>(json['id']),
+      strategyId: serializer.fromJson<String>(json['strategyId']),
+      strategyVersionId: serializer.fromJson<String>(json['strategyVersionId']),
+      strategyVersionNumber: serializer.fromJson<int>(
+        json['strategyVersionNumber'],
+      ),
+      stockCode: serializer.fromJson<String>(json['stockCode']),
+      stockName: serializer.fromJson<String>(json['stockName']),
+      market: serializer.fromJson<String>(json['market']),
+      configJson: serializer.fromJson<String>(json['configJson']),
+      resultJson: serializer.fromJson<String>(json['resultJson']),
+      adjustmentMode: serializer.fromJson<String>(json['adjustmentMode']),
+      dataFingerprint: serializer.fromJson<String>(json['dataFingerprint']),
+      dataStart: serializer.fromJson<DateTime?>(json['dataStart']),
+      dataEnd: serializer.fromJson<DateTime?>(json['dataEnd']),
+      dataAsOf: serializer.fromJson<DateTime>(json['dataAsOf']),
+      barsProcessed: serializer.fromJson<int>(json['barsProcessed']),
+      sampleCount: serializer.fromJson<int>(json['sampleCount']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'strategyId': serializer.toJson<String>(strategyId),
+      'strategyVersionId': serializer.toJson<String>(strategyVersionId),
+      'strategyVersionNumber': serializer.toJson<int>(strategyVersionNumber),
+      'stockCode': serializer.toJson<String>(stockCode),
+      'stockName': serializer.toJson<String>(stockName),
+      'market': serializer.toJson<String>(market),
+      'configJson': serializer.toJson<String>(configJson),
+      'resultJson': serializer.toJson<String>(resultJson),
+      'adjustmentMode': serializer.toJson<String>(adjustmentMode),
+      'dataFingerprint': serializer.toJson<String>(dataFingerprint),
+      'dataStart': serializer.toJson<DateTime?>(dataStart),
+      'dataEnd': serializer.toJson<DateTime?>(dataEnd),
+      'dataAsOf': serializer.toJson<DateTime>(dataAsOf),
+      'barsProcessed': serializer.toJson<int>(barsProcessed),
+      'sampleCount': serializer.toJson<int>(sampleCount),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  StrategyBacktestRunRow copyWith({
+    String? id,
+    String? strategyId,
+    String? strategyVersionId,
+    int? strategyVersionNumber,
+    String? stockCode,
+    String? stockName,
+    String? market,
+    String? configJson,
+    String? resultJson,
+    String? adjustmentMode,
+    String? dataFingerprint,
+    Value<DateTime?> dataStart = const Value.absent(),
+    Value<DateTime?> dataEnd = const Value.absent(),
+    DateTime? dataAsOf,
+    int? barsProcessed,
+    int? sampleCount,
+    DateTime? createdAt,
+  }) => StrategyBacktestRunRow(
+    id: id ?? this.id,
+    strategyId: strategyId ?? this.strategyId,
+    strategyVersionId: strategyVersionId ?? this.strategyVersionId,
+    strategyVersionNumber: strategyVersionNumber ?? this.strategyVersionNumber,
+    stockCode: stockCode ?? this.stockCode,
+    stockName: stockName ?? this.stockName,
+    market: market ?? this.market,
+    configJson: configJson ?? this.configJson,
+    resultJson: resultJson ?? this.resultJson,
+    adjustmentMode: adjustmentMode ?? this.adjustmentMode,
+    dataFingerprint: dataFingerprint ?? this.dataFingerprint,
+    dataStart: dataStart.present ? dataStart.value : this.dataStart,
+    dataEnd: dataEnd.present ? dataEnd.value : this.dataEnd,
+    dataAsOf: dataAsOf ?? this.dataAsOf,
+    barsProcessed: barsProcessed ?? this.barsProcessed,
+    sampleCount: sampleCount ?? this.sampleCount,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  StrategyBacktestRunRow copyWithCompanion(StrategyBacktestRunsCompanion data) {
+    return StrategyBacktestRunRow(
+      id: data.id.present ? data.id.value : this.id,
+      strategyId: data.strategyId.present
+          ? data.strategyId.value
+          : this.strategyId,
+      strategyVersionId: data.strategyVersionId.present
+          ? data.strategyVersionId.value
+          : this.strategyVersionId,
+      strategyVersionNumber: data.strategyVersionNumber.present
+          ? data.strategyVersionNumber.value
+          : this.strategyVersionNumber,
+      stockCode: data.stockCode.present ? data.stockCode.value : this.stockCode,
+      stockName: data.stockName.present ? data.stockName.value : this.stockName,
+      market: data.market.present ? data.market.value : this.market,
+      configJson: data.configJson.present
+          ? data.configJson.value
+          : this.configJson,
+      resultJson: data.resultJson.present
+          ? data.resultJson.value
+          : this.resultJson,
+      adjustmentMode: data.adjustmentMode.present
+          ? data.adjustmentMode.value
+          : this.adjustmentMode,
+      dataFingerprint: data.dataFingerprint.present
+          ? data.dataFingerprint.value
+          : this.dataFingerprint,
+      dataStart: data.dataStart.present ? data.dataStart.value : this.dataStart,
+      dataEnd: data.dataEnd.present ? data.dataEnd.value : this.dataEnd,
+      dataAsOf: data.dataAsOf.present ? data.dataAsOf.value : this.dataAsOf,
+      barsProcessed: data.barsProcessed.present
+          ? data.barsProcessed.value
+          : this.barsProcessed,
+      sampleCount: data.sampleCount.present
+          ? data.sampleCount.value
+          : this.sampleCount,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategyBacktestRunRow(')
+          ..write('id: $id, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('strategyVersionId: $strategyVersionId, ')
+          ..write('strategyVersionNumber: $strategyVersionNumber, ')
+          ..write('stockCode: $stockCode, ')
+          ..write('stockName: $stockName, ')
+          ..write('market: $market, ')
+          ..write('configJson: $configJson, ')
+          ..write('resultJson: $resultJson, ')
+          ..write('adjustmentMode: $adjustmentMode, ')
+          ..write('dataFingerprint: $dataFingerprint, ')
+          ..write('dataStart: $dataStart, ')
+          ..write('dataEnd: $dataEnd, ')
+          ..write('dataAsOf: $dataAsOf, ')
+          ..write('barsProcessed: $barsProcessed, ')
+          ..write('sampleCount: $sampleCount, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    strategyId,
+    strategyVersionId,
+    strategyVersionNumber,
+    stockCode,
+    stockName,
+    market,
+    configJson,
+    resultJson,
+    adjustmentMode,
+    dataFingerprint,
+    dataStart,
+    dataEnd,
+    dataAsOf,
+    barsProcessed,
+    sampleCount,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StrategyBacktestRunRow &&
+          other.id == this.id &&
+          other.strategyId == this.strategyId &&
+          other.strategyVersionId == this.strategyVersionId &&
+          other.strategyVersionNumber == this.strategyVersionNumber &&
+          other.stockCode == this.stockCode &&
+          other.stockName == this.stockName &&
+          other.market == this.market &&
+          other.configJson == this.configJson &&
+          other.resultJson == this.resultJson &&
+          other.adjustmentMode == this.adjustmentMode &&
+          other.dataFingerprint == this.dataFingerprint &&
+          other.dataStart == this.dataStart &&
+          other.dataEnd == this.dataEnd &&
+          other.dataAsOf == this.dataAsOf &&
+          other.barsProcessed == this.barsProcessed &&
+          other.sampleCount == this.sampleCount &&
+          other.createdAt == this.createdAt);
+}
+
+class StrategyBacktestRunsCompanion
+    extends UpdateCompanion<StrategyBacktestRunRow> {
+  final Value<String> id;
+  final Value<String> strategyId;
+  final Value<String> strategyVersionId;
+  final Value<int> strategyVersionNumber;
+  final Value<String> stockCode;
+  final Value<String> stockName;
+  final Value<String> market;
+  final Value<String> configJson;
+  final Value<String> resultJson;
+  final Value<String> adjustmentMode;
+  final Value<String> dataFingerprint;
+  final Value<DateTime?> dataStart;
+  final Value<DateTime?> dataEnd;
+  final Value<DateTime> dataAsOf;
+  final Value<int> barsProcessed;
+  final Value<int> sampleCount;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const StrategyBacktestRunsCompanion({
+    this.id = const Value.absent(),
+    this.strategyId = const Value.absent(),
+    this.strategyVersionId = const Value.absent(),
+    this.strategyVersionNumber = const Value.absent(),
+    this.stockCode = const Value.absent(),
+    this.stockName = const Value.absent(),
+    this.market = const Value.absent(),
+    this.configJson = const Value.absent(),
+    this.resultJson = const Value.absent(),
+    this.adjustmentMode = const Value.absent(),
+    this.dataFingerprint = const Value.absent(),
+    this.dataStart = const Value.absent(),
+    this.dataEnd = const Value.absent(),
+    this.dataAsOf = const Value.absent(),
+    this.barsProcessed = const Value.absent(),
+    this.sampleCount = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StrategyBacktestRunsCompanion.insert({
+    required String id,
+    required String strategyId,
+    required String strategyVersionId,
+    required int strategyVersionNumber,
+    required String stockCode,
+    required String stockName,
+    required String market,
+    required String configJson,
+    required String resultJson,
+    required String adjustmentMode,
+    required String dataFingerprint,
+    this.dataStart = const Value.absent(),
+    this.dataEnd = const Value.absent(),
+    required DateTime dataAsOf,
+    required int barsProcessed,
+    required int sampleCount,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       strategyId = Value(strategyId),
+       strategyVersionId = Value(strategyVersionId),
+       strategyVersionNumber = Value(strategyVersionNumber),
+       stockCode = Value(stockCode),
+       stockName = Value(stockName),
+       market = Value(market),
+       configJson = Value(configJson),
+       resultJson = Value(resultJson),
+       adjustmentMode = Value(adjustmentMode),
+       dataFingerprint = Value(dataFingerprint),
+       dataAsOf = Value(dataAsOf),
+       barsProcessed = Value(barsProcessed),
+       sampleCount = Value(sampleCount),
+       createdAt = Value(createdAt);
+  static Insertable<StrategyBacktestRunRow> custom({
+    Expression<String>? id,
+    Expression<String>? strategyId,
+    Expression<String>? strategyVersionId,
+    Expression<int>? strategyVersionNumber,
+    Expression<String>? stockCode,
+    Expression<String>? stockName,
+    Expression<String>? market,
+    Expression<String>? configJson,
+    Expression<String>? resultJson,
+    Expression<String>? adjustmentMode,
+    Expression<String>? dataFingerprint,
+    Expression<DateTime>? dataStart,
+    Expression<DateTime>? dataEnd,
+    Expression<DateTime>? dataAsOf,
+    Expression<int>? barsProcessed,
+    Expression<int>? sampleCount,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (strategyId != null) 'strategy_id': strategyId,
+      if (strategyVersionId != null) 'strategy_version_id': strategyVersionId,
+      if (strategyVersionNumber != null)
+        'strategy_version_number': strategyVersionNumber,
+      if (stockCode != null) 'stock_code': stockCode,
+      if (stockName != null) 'stock_name': stockName,
+      if (market != null) 'market': market,
+      if (configJson != null) 'config_json': configJson,
+      if (resultJson != null) 'result_json': resultJson,
+      if (adjustmentMode != null) 'adjustment_mode': adjustmentMode,
+      if (dataFingerprint != null) 'data_fingerprint': dataFingerprint,
+      if (dataStart != null) 'data_start': dataStart,
+      if (dataEnd != null) 'data_end': dataEnd,
+      if (dataAsOf != null) 'data_as_of': dataAsOf,
+      if (barsProcessed != null) 'bars_processed': barsProcessed,
+      if (sampleCount != null) 'sample_count': sampleCount,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StrategyBacktestRunsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? strategyId,
+    Value<String>? strategyVersionId,
+    Value<int>? strategyVersionNumber,
+    Value<String>? stockCode,
+    Value<String>? stockName,
+    Value<String>? market,
+    Value<String>? configJson,
+    Value<String>? resultJson,
+    Value<String>? adjustmentMode,
+    Value<String>? dataFingerprint,
+    Value<DateTime?>? dataStart,
+    Value<DateTime?>? dataEnd,
+    Value<DateTime>? dataAsOf,
+    Value<int>? barsProcessed,
+    Value<int>? sampleCount,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return StrategyBacktestRunsCompanion(
+      id: id ?? this.id,
+      strategyId: strategyId ?? this.strategyId,
+      strategyVersionId: strategyVersionId ?? this.strategyVersionId,
+      strategyVersionNumber:
+          strategyVersionNumber ?? this.strategyVersionNumber,
+      stockCode: stockCode ?? this.stockCode,
+      stockName: stockName ?? this.stockName,
+      market: market ?? this.market,
+      configJson: configJson ?? this.configJson,
+      resultJson: resultJson ?? this.resultJson,
+      adjustmentMode: adjustmentMode ?? this.adjustmentMode,
+      dataFingerprint: dataFingerprint ?? this.dataFingerprint,
+      dataStart: dataStart ?? this.dataStart,
+      dataEnd: dataEnd ?? this.dataEnd,
+      dataAsOf: dataAsOf ?? this.dataAsOf,
+      barsProcessed: barsProcessed ?? this.barsProcessed,
+      sampleCount: sampleCount ?? this.sampleCount,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (strategyId.present) {
+      map['strategy_id'] = Variable<String>(strategyId.value);
+    }
+    if (strategyVersionId.present) {
+      map['strategy_version_id'] = Variable<String>(strategyVersionId.value);
+    }
+    if (strategyVersionNumber.present) {
+      map['strategy_version_number'] = Variable<int>(
+        strategyVersionNumber.value,
+      );
+    }
+    if (stockCode.present) {
+      map['stock_code'] = Variable<String>(stockCode.value);
+    }
+    if (stockName.present) {
+      map['stock_name'] = Variable<String>(stockName.value);
+    }
+    if (market.present) {
+      map['market'] = Variable<String>(market.value);
+    }
+    if (configJson.present) {
+      map['config_json'] = Variable<String>(configJson.value);
+    }
+    if (resultJson.present) {
+      map['result_json'] = Variable<String>(resultJson.value);
+    }
+    if (adjustmentMode.present) {
+      map['adjustment_mode'] = Variable<String>(adjustmentMode.value);
+    }
+    if (dataFingerprint.present) {
+      map['data_fingerprint'] = Variable<String>(dataFingerprint.value);
+    }
+    if (dataStart.present) {
+      map['data_start'] = Variable<DateTime>(dataStart.value);
+    }
+    if (dataEnd.present) {
+      map['data_end'] = Variable<DateTime>(dataEnd.value);
+    }
+    if (dataAsOf.present) {
+      map['data_as_of'] = Variable<DateTime>(dataAsOf.value);
+    }
+    if (barsProcessed.present) {
+      map['bars_processed'] = Variable<int>(barsProcessed.value);
+    }
+    if (sampleCount.present) {
+      map['sample_count'] = Variable<int>(sampleCount.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StrategyBacktestRunsCompanion(')
+          ..write('id: $id, ')
+          ..write('strategyId: $strategyId, ')
+          ..write('strategyVersionId: $strategyVersionId, ')
+          ..write('strategyVersionNumber: $strategyVersionNumber, ')
+          ..write('stockCode: $stockCode, ')
+          ..write('stockName: $stockName, ')
+          ..write('market: $market, ')
+          ..write('configJson: $configJson, ')
+          ..write('resultJson: $resultJson, ')
+          ..write('adjustmentMode: $adjustmentMode, ')
+          ..write('dataFingerprint: $dataFingerprint, ')
+          ..write('dataStart: $dataStart, ')
+          ..write('dataEnd: $dataEnd, ')
+          ..write('dataAsOf: $dataAsOf, ')
+          ..write('barsProcessed: $barsProcessed, ')
+          ..write('sampleCount: $sampleCount, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3316,6 +6073,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StrategyReviewsTable strategyReviews = $StrategyReviewsTable(
     this,
   );
+  late final $StrategySourcesTable strategySources = $StrategySourcesTable(
+    this,
+  );
+  late final $StrategyVersionsTable strategyVersions = $StrategyVersionsTable(
+    this,
+  );
+  late final $StrategyVersionSourcesTable strategyVersionSources =
+      $StrategyVersionSourcesTable(this);
+  late final $StrategyBacktestRunsTable strategyBacktestRuns =
+      $StrategyBacktestRunsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3325,7 +6092,60 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     strategies,
     strategyHitRecords,
     strategyReviews,
+    strategySources,
+    strategyVersions,
+    strategyVersionSources,
+    strategyBacktestRuns,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'strategies',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('strategy_sources', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'strategies',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('strategy_versions', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'strategy_versions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('strategy_version_sources', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'strategy_sources',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('strategy_version_sources', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'strategies',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('strategy_backtest_runs', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'strategy_versions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('strategy_backtest_runs', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$WatchlistItemsTableCreateCompanionBuilder =
@@ -3703,6 +6523,85 @@ typedef $$StrategiesTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
+final class $$StrategiesTableReferences
+    extends BaseReferences<_$AppDatabase, $StrategiesTable, StrategyRow> {
+  $$StrategiesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$StrategySourcesTable, List<StrategySourceRow>>
+  _strategySourcesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.strategySources,
+    aliasName: $_aliasNameGenerator(
+      db.strategies.id,
+      db.strategySources.strategyId,
+    ),
+  );
+
+  $$StrategySourcesTableProcessedTableManager get strategySourcesRefs {
+    final manager = $$StrategySourcesTableTableManager(
+      $_db,
+      $_db.strategySources,
+    ).filter((f) => f.strategyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _strategySourcesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StrategyVersionsTable, List<StrategyVersionRow>>
+  _strategyVersionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.strategyVersions,
+    aliasName: $_aliasNameGenerator(
+      db.strategies.id,
+      db.strategyVersions.strategyId,
+    ),
+  );
+
+  $$StrategyVersionsTableProcessedTableManager get strategyVersionsRefs {
+    final manager = $$StrategyVersionsTableTableManager(
+      $_db,
+      $_db.strategyVersions,
+    ).filter((f) => f.strategyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _strategyVersionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StrategyBacktestRunsTable,
+    List<StrategyBacktestRunRow>
+  >
+  _strategyBacktestRunsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.strategyBacktestRuns,
+        aliasName: $_aliasNameGenerator(
+          db.strategies.id,
+          db.strategyBacktestRuns.strategyId,
+        ),
+      );
+
+  $$StrategyBacktestRunsTableProcessedTableManager
+  get strategyBacktestRunsRefs {
+    final manager = $$StrategyBacktestRunsTableTableManager(
+      $_db,
+      $_db.strategyBacktestRuns,
+    ).filter((f) => f.strategyId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _strategyBacktestRunsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $$StrategiesTableFilterComposer
     extends Composer<_$AppDatabase, $StrategiesTable> {
   $$StrategiesTableFilterComposer({
@@ -3821,6 +6720,81 @@ class $$StrategiesTableFilterComposer
     column: $table.lastReviewAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> strategySourcesRefs(
+    Expression<bool> Function($$StrategySourcesTableFilterComposer f) f,
+  ) {
+    final $$StrategySourcesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.strategySources,
+      getReferencedColumn: (t) => t.strategyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategySourcesTableFilterComposer(
+            $db: $db,
+            $table: $db.strategySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> strategyVersionsRefs(
+    Expression<bool> Function($$StrategyVersionsTableFilterComposer f) f,
+  ) {
+    final $$StrategyVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.strategyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> strategyBacktestRunsRefs(
+    Expression<bool> Function($$StrategyBacktestRunsTableFilterComposer f) f,
+  ) {
+    final $$StrategyBacktestRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.strategyBacktestRuns,
+      getReferencedColumn: (t) => t.strategyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyBacktestRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.strategyBacktestRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$StrategiesTableOrderingComposer
@@ -4045,6 +7019,82 @@ class $$StrategiesTableAnnotationComposer
     column: $table.lastReviewAt,
     builder: (column) => column,
   );
+
+  Expression<T> strategySourcesRefs<T extends Object>(
+    Expression<T> Function($$StrategySourcesTableAnnotationComposer a) f,
+  ) {
+    final $$StrategySourcesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.strategySources,
+      getReferencedColumn: (t) => t.strategyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategySourcesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> strategyVersionsRefs<T extends Object>(
+    Expression<T> Function($$StrategyVersionsTableAnnotationComposer a) f,
+  ) {
+    final $$StrategyVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.strategyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> strategyBacktestRunsRefs<T extends Object>(
+    Expression<T> Function($$StrategyBacktestRunsTableAnnotationComposer a) f,
+  ) {
+    final $$StrategyBacktestRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.strategyBacktestRuns,
+          getReferencedColumn: (t) => t.strategyId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StrategyBacktestRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.strategyBacktestRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$StrategiesTableTableManager
@@ -4058,12 +7108,13 @@ class $$StrategiesTableTableManager
           $$StrategiesTableAnnotationComposer,
           $$StrategiesTableCreateCompanionBuilder,
           $$StrategiesTableUpdateCompanionBuilder,
-          (
-            StrategyRow,
-            BaseReferences<_$AppDatabase, $StrategiesTable, StrategyRow>,
-          ),
+          (StrategyRow, $$StrategiesTableReferences),
           StrategyRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool strategySourcesRefs,
+            bool strategyVersionsRefs,
+            bool strategyBacktestRunsRefs,
+          })
         > {
   $$StrategiesTableTableManager(_$AppDatabase db, $StrategiesTable table)
     : super(
@@ -4177,9 +7228,96 @@ class $$StrategiesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StrategiesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({
+                strategySourcesRefs = false,
+                strategyVersionsRefs = false,
+                strategyBacktestRunsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (strategySourcesRefs) db.strategySources,
+                    if (strategyVersionsRefs) db.strategyVersions,
+                    if (strategyBacktestRunsRefs) db.strategyBacktestRuns,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (strategySourcesRefs)
+                        await $_getPrefetchedData<
+                          StrategyRow,
+                          $StrategiesTable,
+                          StrategySourceRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StrategiesTableReferences
+                              ._strategySourcesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StrategiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).strategySourcesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.strategyId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (strategyVersionsRefs)
+                        await $_getPrefetchedData<
+                          StrategyRow,
+                          $StrategiesTable,
+                          StrategyVersionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StrategiesTableReferences
+                              ._strategyVersionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StrategiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).strategyVersionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.strategyId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (strategyBacktestRunsRefs)
+                        await $_getPrefetchedData<
+                          StrategyRow,
+                          $StrategiesTable,
+                          StrategyBacktestRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StrategiesTableReferences
+                              ._strategyBacktestRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StrategiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).strategyBacktestRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.strategyId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -4194,12 +7332,13 @@ typedef $$StrategiesTableProcessedTableManager =
       $$StrategiesTableAnnotationComposer,
       $$StrategiesTableCreateCompanionBuilder,
       $$StrategiesTableUpdateCompanionBuilder,
-      (
-        StrategyRow,
-        BaseReferences<_$AppDatabase, $StrategiesTable, StrategyRow>,
-      ),
+      (StrategyRow, $$StrategiesTableReferences),
       StrategyRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({
+        bool strategySourcesRefs,
+        bool strategyVersionsRefs,
+        bool strategyBacktestRunsRefs,
+      })
     >;
 typedef $$StrategyHitRecordsTableCreateCompanionBuilder =
     StrategyHitRecordsCompanion Function({
@@ -4876,6 +8015,2352 @@ typedef $$StrategyReviewsTableProcessedTableManager =
       StrategyReviewRow,
       PrefetchHooks Function()
     >;
+typedef $$StrategySourcesTableCreateCompanionBuilder =
+    StrategySourcesCompanion Function({
+      required String id,
+      required String strategyId,
+      required String externalRef,
+      required String sourceType,
+      Value<String?> speaker,
+      Value<DateTime?> capturedAt,
+      required String summary,
+      Value<String?> sanitizedText,
+      required String fingerprint,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$StrategySourcesTableUpdateCompanionBuilder =
+    StrategySourcesCompanion Function({
+      Value<String> id,
+      Value<String> strategyId,
+      Value<String> externalRef,
+      Value<String> sourceType,
+      Value<String?> speaker,
+      Value<DateTime?> capturedAt,
+      Value<String> summary,
+      Value<String?> sanitizedText,
+      Value<String> fingerprint,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$StrategySourcesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StrategySourcesTable,
+          StrategySourceRow
+        > {
+  $$StrategySourcesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $StrategiesTable _strategyIdTable(_$AppDatabase db) =>
+      db.strategies.createAlias(
+        $_aliasNameGenerator(db.strategySources.strategyId, db.strategies.id),
+      );
+
+  $$StrategiesTableProcessedTableManager get strategyId {
+    final $_column = $_itemColumn<String>('strategy_id')!;
+
+    final manager = $$StrategiesTableTableManager(
+      $_db,
+      $_db.strategies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_strategyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StrategyVersionSourcesTable,
+    List<StrategyVersionSourceRow>
+  >
+  _strategyVersionSourcesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.strategyVersionSources,
+        aliasName: $_aliasNameGenerator(
+          db.strategySources.id,
+          db.strategyVersionSources.sourceId,
+        ),
+      );
+
+  $$StrategyVersionSourcesTableProcessedTableManager
+  get strategyVersionSourcesRefs {
+    final manager = $$StrategyVersionSourcesTableTableManager(
+      $_db,
+      $_db.strategyVersionSources,
+    ).filter((f) => f.sourceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _strategyVersionSourcesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$StrategySourcesTableFilterComposer
+    extends Composer<_$AppDatabase, $StrategySourcesTable> {
+  $$StrategySourcesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get externalRef => $composableBuilder(
+    column: $table.externalRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get speaker => $composableBuilder(
+    column: $table.speaker,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get summary => $composableBuilder(
+    column: $table.summary,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sanitizedText => $composableBuilder(
+    column: $table.sanitizedText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$StrategiesTableFilterComposer get strategyId {
+    final $$StrategiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableFilterComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> strategyVersionSourcesRefs(
+    Expression<bool> Function($$StrategyVersionSourcesTableFilterComposer f) f,
+  ) {
+    final $$StrategyVersionSourcesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.strategyVersionSources,
+          getReferencedColumn: (t) => t.sourceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StrategyVersionSourcesTableFilterComposer(
+                $db: $db,
+                $table: $db.strategyVersionSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$StrategySourcesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StrategySourcesTable> {
+  $$StrategySourcesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get externalRef => $composableBuilder(
+    column: $table.externalRef,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get speaker => $composableBuilder(
+    column: $table.speaker,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get summary => $composableBuilder(
+    column: $table.summary,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sanitizedText => $composableBuilder(
+    column: $table.sanitizedText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$StrategiesTableOrderingComposer get strategyId {
+    final $$StrategiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategySourcesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StrategySourcesTable> {
+  $$StrategySourcesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get externalRef => $composableBuilder(
+    column: $table.externalRef,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceType => $composableBuilder(
+    column: $table.sourceType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get speaker =>
+      $composableBuilder(column: $table.speaker, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get summary =>
+      $composableBuilder(column: $table.summary, builder: (column) => column);
+
+  GeneratedColumn<String> get sanitizedText => $composableBuilder(
+    column: $table.sanitizedText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fingerprint => $composableBuilder(
+    column: $table.fingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$StrategiesTableAnnotationComposer get strategyId {
+    final $$StrategiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> strategyVersionSourcesRefs<T extends Object>(
+    Expression<T> Function($$StrategyVersionSourcesTableAnnotationComposer a) f,
+  ) {
+    final $$StrategyVersionSourcesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.strategyVersionSources,
+          getReferencedColumn: (t) => t.sourceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StrategyVersionSourcesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.strategyVersionSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$StrategySourcesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StrategySourcesTable,
+          StrategySourceRow,
+          $$StrategySourcesTableFilterComposer,
+          $$StrategySourcesTableOrderingComposer,
+          $$StrategySourcesTableAnnotationComposer,
+          $$StrategySourcesTableCreateCompanionBuilder,
+          $$StrategySourcesTableUpdateCompanionBuilder,
+          (StrategySourceRow, $$StrategySourcesTableReferences),
+          StrategySourceRow,
+          PrefetchHooks Function({
+            bool strategyId,
+            bool strategyVersionSourcesRefs,
+          })
+        > {
+  $$StrategySourcesTableTableManager(
+    _$AppDatabase db,
+    $StrategySourcesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StrategySourcesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StrategySourcesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StrategySourcesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> strategyId = const Value.absent(),
+                Value<String> externalRef = const Value.absent(),
+                Value<String> sourceType = const Value.absent(),
+                Value<String?> speaker = const Value.absent(),
+                Value<DateTime?> capturedAt = const Value.absent(),
+                Value<String> summary = const Value.absent(),
+                Value<String?> sanitizedText = const Value.absent(),
+                Value<String> fingerprint = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StrategySourcesCompanion(
+                id: id,
+                strategyId: strategyId,
+                externalRef: externalRef,
+                sourceType: sourceType,
+                speaker: speaker,
+                capturedAt: capturedAt,
+                summary: summary,
+                sanitizedText: sanitizedText,
+                fingerprint: fingerprint,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String strategyId,
+                required String externalRef,
+                required String sourceType,
+                Value<String?> speaker = const Value.absent(),
+                Value<DateTime?> capturedAt = const Value.absent(),
+                required String summary,
+                Value<String?> sanitizedText = const Value.absent(),
+                required String fingerprint,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => StrategySourcesCompanion.insert(
+                id: id,
+                strategyId: strategyId,
+                externalRef: externalRef,
+                sourceType: sourceType,
+                speaker: speaker,
+                capturedAt: capturedAt,
+                summary: summary,
+                sanitizedText: sanitizedText,
+                fingerprint: fingerprint,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StrategySourcesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({strategyId = false, strategyVersionSourcesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (strategyVersionSourcesRefs) db.strategyVersionSources,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (strategyId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.strategyId,
+                                    referencedTable:
+                                        $$StrategySourcesTableReferences
+                                            ._strategyIdTable(db),
+                                    referencedColumn:
+                                        $$StrategySourcesTableReferences
+                                            ._strategyIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (strategyVersionSourcesRefs)
+                        await $_getPrefetchedData<
+                          StrategySourceRow,
+                          $StrategySourcesTable,
+                          StrategyVersionSourceRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StrategySourcesTableReferences
+                              ._strategyVersionSourcesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StrategySourcesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).strategyVersionSourcesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$StrategySourcesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StrategySourcesTable,
+      StrategySourceRow,
+      $$StrategySourcesTableFilterComposer,
+      $$StrategySourcesTableOrderingComposer,
+      $$StrategySourcesTableAnnotationComposer,
+      $$StrategySourcesTableCreateCompanionBuilder,
+      $$StrategySourcesTableUpdateCompanionBuilder,
+      (StrategySourceRow, $$StrategySourcesTableReferences),
+      StrategySourceRow,
+      PrefetchHooks Function({bool strategyId, bool strategyVersionSourcesRefs})
+    >;
+typedef $$StrategyVersionsTableCreateCompanionBuilder =
+    StrategyVersionsCompanion Function({
+      required String id,
+      required String strategyId,
+      required int versionNumber,
+      required String status,
+      required String strategyType,
+      required String strategySnapshotJson,
+      Value<String?> packageJson,
+      required String applicabilityJson,
+      required String riskNotesJson,
+      required String pendingQuestionsJson,
+      required String compatibilityIssuesJson,
+      Value<String?> previousVersionId,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$StrategyVersionsTableUpdateCompanionBuilder =
+    StrategyVersionsCompanion Function({
+      Value<String> id,
+      Value<String> strategyId,
+      Value<int> versionNumber,
+      Value<String> status,
+      Value<String> strategyType,
+      Value<String> strategySnapshotJson,
+      Value<String?> packageJson,
+      Value<String> applicabilityJson,
+      Value<String> riskNotesJson,
+      Value<String> pendingQuestionsJson,
+      Value<String> compatibilityIssuesJson,
+      Value<String?> previousVersionId,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$StrategyVersionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StrategyVersionsTable,
+          StrategyVersionRow
+        > {
+  $$StrategyVersionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $StrategiesTable _strategyIdTable(_$AppDatabase db) =>
+      db.strategies.createAlias(
+        $_aliasNameGenerator(db.strategyVersions.strategyId, db.strategies.id),
+      );
+
+  $$StrategiesTableProcessedTableManager get strategyId {
+    final $_column = $_itemColumn<String>('strategy_id')!;
+
+    final manager = $$StrategiesTableTableManager(
+      $_db,
+      $_db.strategies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_strategyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StrategyVersionSourcesTable,
+    List<StrategyVersionSourceRow>
+  >
+  _strategyVersionSourcesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.strategyVersionSources,
+        aliasName: $_aliasNameGenerator(
+          db.strategyVersions.id,
+          db.strategyVersionSources.versionId,
+        ),
+      );
+
+  $$StrategyVersionSourcesTableProcessedTableManager
+  get strategyVersionSourcesRefs {
+    final manager = $$StrategyVersionSourcesTableTableManager(
+      $_db,
+      $_db.strategyVersionSources,
+    ).filter((f) => f.versionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _strategyVersionSourcesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StrategyBacktestRunsTable,
+    List<StrategyBacktestRunRow>
+  >
+  _strategyBacktestRunsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.strategyBacktestRuns,
+        aliasName: $_aliasNameGenerator(
+          db.strategyVersions.id,
+          db.strategyBacktestRuns.strategyVersionId,
+        ),
+      );
+
+  $$StrategyBacktestRunsTableProcessedTableManager
+  get strategyBacktestRunsRefs {
+    final manager =
+        $$StrategyBacktestRunsTableTableManager(
+          $_db,
+          $_db.strategyBacktestRuns,
+        ).filter(
+          (f) => f.strategyVersionId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _strategyBacktestRunsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$StrategyVersionsTableFilterComposer
+    extends Composer<_$AppDatabase, $StrategyVersionsTable> {
+  $$StrategyVersionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get versionNumber => $composableBuilder(
+    column: $table.versionNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strategyType => $composableBuilder(
+    column: $table.strategyType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strategySnapshotJson => $composableBuilder(
+    column: $table.strategySnapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packageJson => $composableBuilder(
+    column: $table.packageJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get applicabilityJson => $composableBuilder(
+    column: $table.applicabilityJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get riskNotesJson => $composableBuilder(
+    column: $table.riskNotesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingQuestionsJson => $composableBuilder(
+    column: $table.pendingQuestionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get compatibilityIssuesJson => $composableBuilder(
+    column: $table.compatibilityIssuesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousVersionId => $composableBuilder(
+    column: $table.previousVersionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$StrategiesTableFilterComposer get strategyId {
+    final $$StrategiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableFilterComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> strategyVersionSourcesRefs(
+    Expression<bool> Function($$StrategyVersionSourcesTableFilterComposer f) f,
+  ) {
+    final $$StrategyVersionSourcesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.strategyVersionSources,
+          getReferencedColumn: (t) => t.versionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StrategyVersionSourcesTableFilterComposer(
+                $db: $db,
+                $table: $db.strategyVersionSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> strategyBacktestRunsRefs(
+    Expression<bool> Function($$StrategyBacktestRunsTableFilterComposer f) f,
+  ) {
+    final $$StrategyBacktestRunsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.strategyBacktestRuns,
+      getReferencedColumn: (t) => t.strategyVersionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyBacktestRunsTableFilterComposer(
+            $db: $db,
+            $table: $db.strategyBacktestRuns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$StrategyVersionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StrategyVersionsTable> {
+  $$StrategyVersionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get versionNumber => $composableBuilder(
+    column: $table.versionNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get strategyType => $composableBuilder(
+    column: $table.strategyType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get strategySnapshotJson => $composableBuilder(
+    column: $table.strategySnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packageJson => $composableBuilder(
+    column: $table.packageJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get applicabilityJson => $composableBuilder(
+    column: $table.applicabilityJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get riskNotesJson => $composableBuilder(
+    column: $table.riskNotesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pendingQuestionsJson => $composableBuilder(
+    column: $table.pendingQuestionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get compatibilityIssuesJson => $composableBuilder(
+    column: $table.compatibilityIssuesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previousVersionId => $composableBuilder(
+    column: $table.previousVersionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$StrategiesTableOrderingComposer get strategyId {
+    final $$StrategiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyVersionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StrategyVersionsTable> {
+  $$StrategyVersionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get versionNumber => $composableBuilder(
+    column: $table.versionNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get strategyType => $composableBuilder(
+    column: $table.strategyType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get strategySnapshotJson => $composableBuilder(
+    column: $table.strategySnapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get packageJson => $composableBuilder(
+    column: $table.packageJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get applicabilityJson => $composableBuilder(
+    column: $table.applicabilityJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get riskNotesJson => $composableBuilder(
+    column: $table.riskNotesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pendingQuestionsJson => $composableBuilder(
+    column: $table.pendingQuestionsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get compatibilityIssuesJson => $composableBuilder(
+    column: $table.compatibilityIssuesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousVersionId => $composableBuilder(
+    column: $table.previousVersionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$StrategiesTableAnnotationComposer get strategyId {
+    final $$StrategiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> strategyVersionSourcesRefs<T extends Object>(
+    Expression<T> Function($$StrategyVersionSourcesTableAnnotationComposer a) f,
+  ) {
+    final $$StrategyVersionSourcesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.strategyVersionSources,
+          getReferencedColumn: (t) => t.versionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StrategyVersionSourcesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.strategyVersionSources,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> strategyBacktestRunsRefs<T extends Object>(
+    Expression<T> Function($$StrategyBacktestRunsTableAnnotationComposer a) f,
+  ) {
+    final $$StrategyBacktestRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.strategyBacktestRuns,
+          getReferencedColumn: (t) => t.strategyVersionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StrategyBacktestRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.strategyBacktestRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$StrategyVersionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StrategyVersionsTable,
+          StrategyVersionRow,
+          $$StrategyVersionsTableFilterComposer,
+          $$StrategyVersionsTableOrderingComposer,
+          $$StrategyVersionsTableAnnotationComposer,
+          $$StrategyVersionsTableCreateCompanionBuilder,
+          $$StrategyVersionsTableUpdateCompanionBuilder,
+          (StrategyVersionRow, $$StrategyVersionsTableReferences),
+          StrategyVersionRow,
+          PrefetchHooks Function({
+            bool strategyId,
+            bool strategyVersionSourcesRefs,
+            bool strategyBacktestRunsRefs,
+          })
+        > {
+  $$StrategyVersionsTableTableManager(
+    _$AppDatabase db,
+    $StrategyVersionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StrategyVersionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StrategyVersionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StrategyVersionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> strategyId = const Value.absent(),
+                Value<int> versionNumber = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> strategyType = const Value.absent(),
+                Value<String> strategySnapshotJson = const Value.absent(),
+                Value<String?> packageJson = const Value.absent(),
+                Value<String> applicabilityJson = const Value.absent(),
+                Value<String> riskNotesJson = const Value.absent(),
+                Value<String> pendingQuestionsJson = const Value.absent(),
+                Value<String> compatibilityIssuesJson = const Value.absent(),
+                Value<String?> previousVersionId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StrategyVersionsCompanion(
+                id: id,
+                strategyId: strategyId,
+                versionNumber: versionNumber,
+                status: status,
+                strategyType: strategyType,
+                strategySnapshotJson: strategySnapshotJson,
+                packageJson: packageJson,
+                applicabilityJson: applicabilityJson,
+                riskNotesJson: riskNotesJson,
+                pendingQuestionsJson: pendingQuestionsJson,
+                compatibilityIssuesJson: compatibilityIssuesJson,
+                previousVersionId: previousVersionId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String strategyId,
+                required int versionNumber,
+                required String status,
+                required String strategyType,
+                required String strategySnapshotJson,
+                Value<String?> packageJson = const Value.absent(),
+                required String applicabilityJson,
+                required String riskNotesJson,
+                required String pendingQuestionsJson,
+                required String compatibilityIssuesJson,
+                Value<String?> previousVersionId = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => StrategyVersionsCompanion.insert(
+                id: id,
+                strategyId: strategyId,
+                versionNumber: versionNumber,
+                status: status,
+                strategyType: strategyType,
+                strategySnapshotJson: strategySnapshotJson,
+                packageJson: packageJson,
+                applicabilityJson: applicabilityJson,
+                riskNotesJson: riskNotesJson,
+                pendingQuestionsJson: pendingQuestionsJson,
+                compatibilityIssuesJson: compatibilityIssuesJson,
+                previousVersionId: previousVersionId,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StrategyVersionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                strategyId = false,
+                strategyVersionSourcesRefs = false,
+                strategyBacktestRunsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (strategyVersionSourcesRefs) db.strategyVersionSources,
+                    if (strategyBacktestRunsRefs) db.strategyBacktestRuns,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (strategyId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.strategyId,
+                                    referencedTable:
+                                        $$StrategyVersionsTableReferences
+                                            ._strategyIdTable(db),
+                                    referencedColumn:
+                                        $$StrategyVersionsTableReferences
+                                            ._strategyIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (strategyVersionSourcesRefs)
+                        await $_getPrefetchedData<
+                          StrategyVersionRow,
+                          $StrategyVersionsTable,
+                          StrategyVersionSourceRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StrategyVersionsTableReferences
+                              ._strategyVersionSourcesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StrategyVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).strategyVersionSourcesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.versionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (strategyBacktestRunsRefs)
+                        await $_getPrefetchedData<
+                          StrategyVersionRow,
+                          $StrategyVersionsTable,
+                          StrategyBacktestRunRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$StrategyVersionsTableReferences
+                              ._strategyBacktestRunsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$StrategyVersionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).strategyBacktestRunsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.strategyVersionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$StrategyVersionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StrategyVersionsTable,
+      StrategyVersionRow,
+      $$StrategyVersionsTableFilterComposer,
+      $$StrategyVersionsTableOrderingComposer,
+      $$StrategyVersionsTableAnnotationComposer,
+      $$StrategyVersionsTableCreateCompanionBuilder,
+      $$StrategyVersionsTableUpdateCompanionBuilder,
+      (StrategyVersionRow, $$StrategyVersionsTableReferences),
+      StrategyVersionRow,
+      PrefetchHooks Function({
+        bool strategyId,
+        bool strategyVersionSourcesRefs,
+        bool strategyBacktestRunsRefs,
+      })
+    >;
+typedef $$StrategyVersionSourcesTableCreateCompanionBuilder =
+    StrategyVersionSourcesCompanion Function({
+      required String versionId,
+      required String sourceId,
+      required String ruleIdsJson,
+      Value<int> rowid,
+    });
+typedef $$StrategyVersionSourcesTableUpdateCompanionBuilder =
+    StrategyVersionSourcesCompanion Function({
+      Value<String> versionId,
+      Value<String> sourceId,
+      Value<String> ruleIdsJson,
+      Value<int> rowid,
+    });
+
+final class $$StrategyVersionSourcesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StrategyVersionSourcesTable,
+          StrategyVersionSourceRow
+        > {
+  $$StrategyVersionSourcesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $StrategyVersionsTable _versionIdTable(_$AppDatabase db) =>
+      db.strategyVersions.createAlias(
+        $_aliasNameGenerator(
+          db.strategyVersionSources.versionId,
+          db.strategyVersions.id,
+        ),
+      );
+
+  $$StrategyVersionsTableProcessedTableManager get versionId {
+    final $_column = $_itemColumn<String>('version_id')!;
+
+    final manager = $$StrategyVersionsTableTableManager(
+      $_db,
+      $_db.strategyVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_versionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $StrategySourcesTable _sourceIdTable(_$AppDatabase db) =>
+      db.strategySources.createAlias(
+        $_aliasNameGenerator(
+          db.strategyVersionSources.sourceId,
+          db.strategySources.id,
+        ),
+      );
+
+  $$StrategySourcesTableProcessedTableManager get sourceId {
+    final $_column = $_itemColumn<String>('source_id')!;
+
+    final manager = $$StrategySourcesTableTableManager(
+      $_db,
+      $_db.strategySources,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StrategyVersionSourcesTableFilterComposer
+    extends Composer<_$AppDatabase, $StrategyVersionSourcesTable> {
+  $$StrategyVersionSourcesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get ruleIdsJson => $composableBuilder(
+    column: $table.ruleIdsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$StrategyVersionsTableFilterComposer get versionId {
+    final $$StrategyVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StrategySourcesTableFilterComposer get sourceId {
+    final $$StrategySourcesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceId,
+      referencedTable: $db.strategySources,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategySourcesTableFilterComposer(
+            $db: $db,
+            $table: $db.strategySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyVersionSourcesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StrategyVersionSourcesTable> {
+  $$StrategyVersionSourcesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get ruleIdsJson => $composableBuilder(
+    column: $table.ruleIdsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$StrategyVersionsTableOrderingComposer get versionId {
+    final $$StrategyVersionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StrategySourcesTableOrderingComposer get sourceId {
+    final $$StrategySourcesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceId,
+      referencedTable: $db.strategySources,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategySourcesTableOrderingComposer(
+            $db: $db,
+            $table: $db.strategySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyVersionSourcesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StrategyVersionSourcesTable> {
+  $$StrategyVersionSourcesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get ruleIdsJson => $composableBuilder(
+    column: $table.ruleIdsJson,
+    builder: (column) => column,
+  );
+
+  $$StrategyVersionsTableAnnotationComposer get versionId {
+    final $$StrategyVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.versionId,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StrategySourcesTableAnnotationComposer get sourceId {
+    final $$StrategySourcesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceId,
+      referencedTable: $db.strategySources,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategySourcesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategySources,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyVersionSourcesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StrategyVersionSourcesTable,
+          StrategyVersionSourceRow,
+          $$StrategyVersionSourcesTableFilterComposer,
+          $$StrategyVersionSourcesTableOrderingComposer,
+          $$StrategyVersionSourcesTableAnnotationComposer,
+          $$StrategyVersionSourcesTableCreateCompanionBuilder,
+          $$StrategyVersionSourcesTableUpdateCompanionBuilder,
+          (StrategyVersionSourceRow, $$StrategyVersionSourcesTableReferences),
+          StrategyVersionSourceRow,
+          PrefetchHooks Function({bool versionId, bool sourceId})
+        > {
+  $$StrategyVersionSourcesTableTableManager(
+    _$AppDatabase db,
+    $StrategyVersionSourcesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StrategyVersionSourcesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$StrategyVersionSourcesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$StrategyVersionSourcesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> versionId = const Value.absent(),
+                Value<String> sourceId = const Value.absent(),
+                Value<String> ruleIdsJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StrategyVersionSourcesCompanion(
+                versionId: versionId,
+                sourceId: sourceId,
+                ruleIdsJson: ruleIdsJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String versionId,
+                required String sourceId,
+                required String ruleIdsJson,
+                Value<int> rowid = const Value.absent(),
+              }) => StrategyVersionSourcesCompanion.insert(
+                versionId: versionId,
+                sourceId: sourceId,
+                ruleIdsJson: ruleIdsJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StrategyVersionSourcesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({versionId = false, sourceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (versionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.versionId,
+                                referencedTable:
+                                    $$StrategyVersionSourcesTableReferences
+                                        ._versionIdTable(db),
+                                referencedColumn:
+                                    $$StrategyVersionSourcesTableReferences
+                                        ._versionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (sourceId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sourceId,
+                                referencedTable:
+                                    $$StrategyVersionSourcesTableReferences
+                                        ._sourceIdTable(db),
+                                referencedColumn:
+                                    $$StrategyVersionSourcesTableReferences
+                                        ._sourceIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StrategyVersionSourcesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StrategyVersionSourcesTable,
+      StrategyVersionSourceRow,
+      $$StrategyVersionSourcesTableFilterComposer,
+      $$StrategyVersionSourcesTableOrderingComposer,
+      $$StrategyVersionSourcesTableAnnotationComposer,
+      $$StrategyVersionSourcesTableCreateCompanionBuilder,
+      $$StrategyVersionSourcesTableUpdateCompanionBuilder,
+      (StrategyVersionSourceRow, $$StrategyVersionSourcesTableReferences),
+      StrategyVersionSourceRow,
+      PrefetchHooks Function({bool versionId, bool sourceId})
+    >;
+typedef $$StrategyBacktestRunsTableCreateCompanionBuilder =
+    StrategyBacktestRunsCompanion Function({
+      required String id,
+      required String strategyId,
+      required String strategyVersionId,
+      required int strategyVersionNumber,
+      required String stockCode,
+      required String stockName,
+      required String market,
+      required String configJson,
+      required String resultJson,
+      required String adjustmentMode,
+      required String dataFingerprint,
+      Value<DateTime?> dataStart,
+      Value<DateTime?> dataEnd,
+      required DateTime dataAsOf,
+      required int barsProcessed,
+      required int sampleCount,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$StrategyBacktestRunsTableUpdateCompanionBuilder =
+    StrategyBacktestRunsCompanion Function({
+      Value<String> id,
+      Value<String> strategyId,
+      Value<String> strategyVersionId,
+      Value<int> strategyVersionNumber,
+      Value<String> stockCode,
+      Value<String> stockName,
+      Value<String> market,
+      Value<String> configJson,
+      Value<String> resultJson,
+      Value<String> adjustmentMode,
+      Value<String> dataFingerprint,
+      Value<DateTime?> dataStart,
+      Value<DateTime?> dataEnd,
+      Value<DateTime> dataAsOf,
+      Value<int> barsProcessed,
+      Value<int> sampleCount,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+final class $$StrategyBacktestRunsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StrategyBacktestRunsTable,
+          StrategyBacktestRunRow
+        > {
+  $$StrategyBacktestRunsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $StrategiesTable _strategyIdTable(_$AppDatabase db) =>
+      db.strategies.createAlias(
+        $_aliasNameGenerator(
+          db.strategyBacktestRuns.strategyId,
+          db.strategies.id,
+        ),
+      );
+
+  $$StrategiesTableProcessedTableManager get strategyId {
+    final $_column = $_itemColumn<String>('strategy_id')!;
+
+    final manager = $$StrategiesTableTableManager(
+      $_db,
+      $_db.strategies,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_strategyIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $StrategyVersionsTable _strategyVersionIdTable(_$AppDatabase db) =>
+      db.strategyVersions.createAlias(
+        $_aliasNameGenerator(
+          db.strategyBacktestRuns.strategyVersionId,
+          db.strategyVersions.id,
+        ),
+      );
+
+  $$StrategyVersionsTableProcessedTableManager get strategyVersionId {
+    final $_column = $_itemColumn<String>('strategy_version_id')!;
+
+    final manager = $$StrategyVersionsTableTableManager(
+      $_db,
+      $_db.strategyVersions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_strategyVersionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StrategyBacktestRunsTableFilterComposer
+    extends Composer<_$AppDatabase, $StrategyBacktestRunsTable> {
+  $$StrategyBacktestRunsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get strategyVersionNumber => $composableBuilder(
+    column: $table.strategyVersionNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stockCode => $composableBuilder(
+    column: $table.stockCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stockName => $composableBuilder(
+    column: $table.stockName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get market => $composableBuilder(
+    column: $table.market,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get adjustmentMode => $composableBuilder(
+    column: $table.adjustmentMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dataFingerprint => $composableBuilder(
+    column: $table.dataFingerprint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataStart => $composableBuilder(
+    column: $table.dataStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataEnd => $composableBuilder(
+    column: $table.dataEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dataAsOf => $composableBuilder(
+    column: $table.dataAsOf,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get barsProcessed => $composableBuilder(
+    column: $table.barsProcessed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sampleCount => $composableBuilder(
+    column: $table.sampleCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$StrategiesTableFilterComposer get strategyId {
+    final $$StrategiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableFilterComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StrategyVersionsTableFilterComposer get strategyVersionId {
+    final $$StrategyVersionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyVersionId,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableFilterComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyBacktestRunsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StrategyBacktestRunsTable> {
+  $$StrategyBacktestRunsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get strategyVersionNumber => $composableBuilder(
+    column: $table.strategyVersionNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stockCode => $composableBuilder(
+    column: $table.stockCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stockName => $composableBuilder(
+    column: $table.stockName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get market => $composableBuilder(
+    column: $table.market,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get adjustmentMode => $composableBuilder(
+    column: $table.adjustmentMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dataFingerprint => $composableBuilder(
+    column: $table.dataFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataStart => $composableBuilder(
+    column: $table.dataStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataEnd => $composableBuilder(
+    column: $table.dataEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dataAsOf => $composableBuilder(
+    column: $table.dataAsOf,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get barsProcessed => $composableBuilder(
+    column: $table.barsProcessed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sampleCount => $composableBuilder(
+    column: $table.sampleCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$StrategiesTableOrderingComposer get strategyId {
+    final $$StrategiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StrategyVersionsTableOrderingComposer get strategyVersionId {
+    final $$StrategyVersionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyVersionId,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyBacktestRunsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StrategyBacktestRunsTable> {
+  $$StrategyBacktestRunsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get strategyVersionNumber => $composableBuilder(
+    column: $table.strategyVersionNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get stockCode =>
+      $composableBuilder(column: $table.stockCode, builder: (column) => column);
+
+  GeneratedColumn<String> get stockName =>
+      $composableBuilder(column: $table.stockName, builder: (column) => column);
+
+  GeneratedColumn<String> get market =>
+      $composableBuilder(column: $table.market, builder: (column) => column);
+
+  GeneratedColumn<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get resultJson => $composableBuilder(
+    column: $table.resultJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get adjustmentMode => $composableBuilder(
+    column: $table.adjustmentMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dataFingerprint => $composableBuilder(
+    column: $table.dataFingerprint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get dataStart =>
+      $composableBuilder(column: $table.dataStart, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dataEnd =>
+      $composableBuilder(column: $table.dataEnd, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dataAsOf =>
+      $composableBuilder(column: $table.dataAsOf, builder: (column) => column);
+
+  GeneratedColumn<int> get barsProcessed => $composableBuilder(
+    column: $table.barsProcessed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sampleCount => $composableBuilder(
+    column: $table.sampleCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$StrategiesTableAnnotationComposer get strategyId {
+    final $$StrategiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyId,
+      referencedTable: $db.strategies,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategies,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$StrategyVersionsTableAnnotationComposer get strategyVersionId {
+    final $$StrategyVersionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.strategyVersionId,
+      referencedTable: $db.strategyVersions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StrategyVersionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.strategyVersions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StrategyBacktestRunsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StrategyBacktestRunsTable,
+          StrategyBacktestRunRow,
+          $$StrategyBacktestRunsTableFilterComposer,
+          $$StrategyBacktestRunsTableOrderingComposer,
+          $$StrategyBacktestRunsTableAnnotationComposer,
+          $$StrategyBacktestRunsTableCreateCompanionBuilder,
+          $$StrategyBacktestRunsTableUpdateCompanionBuilder,
+          (StrategyBacktestRunRow, $$StrategyBacktestRunsTableReferences),
+          StrategyBacktestRunRow,
+          PrefetchHooks Function({bool strategyId, bool strategyVersionId})
+        > {
+  $$StrategyBacktestRunsTableTableManager(
+    _$AppDatabase db,
+    $StrategyBacktestRunsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StrategyBacktestRunsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StrategyBacktestRunsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$StrategyBacktestRunsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> strategyId = const Value.absent(),
+                Value<String> strategyVersionId = const Value.absent(),
+                Value<int> strategyVersionNumber = const Value.absent(),
+                Value<String> stockCode = const Value.absent(),
+                Value<String> stockName = const Value.absent(),
+                Value<String> market = const Value.absent(),
+                Value<String> configJson = const Value.absent(),
+                Value<String> resultJson = const Value.absent(),
+                Value<String> adjustmentMode = const Value.absent(),
+                Value<String> dataFingerprint = const Value.absent(),
+                Value<DateTime?> dataStart = const Value.absent(),
+                Value<DateTime?> dataEnd = const Value.absent(),
+                Value<DateTime> dataAsOf = const Value.absent(),
+                Value<int> barsProcessed = const Value.absent(),
+                Value<int> sampleCount = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StrategyBacktestRunsCompanion(
+                id: id,
+                strategyId: strategyId,
+                strategyVersionId: strategyVersionId,
+                strategyVersionNumber: strategyVersionNumber,
+                stockCode: stockCode,
+                stockName: stockName,
+                market: market,
+                configJson: configJson,
+                resultJson: resultJson,
+                adjustmentMode: adjustmentMode,
+                dataFingerprint: dataFingerprint,
+                dataStart: dataStart,
+                dataEnd: dataEnd,
+                dataAsOf: dataAsOf,
+                barsProcessed: barsProcessed,
+                sampleCount: sampleCount,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String strategyId,
+                required String strategyVersionId,
+                required int strategyVersionNumber,
+                required String stockCode,
+                required String stockName,
+                required String market,
+                required String configJson,
+                required String resultJson,
+                required String adjustmentMode,
+                required String dataFingerprint,
+                Value<DateTime?> dataStart = const Value.absent(),
+                Value<DateTime?> dataEnd = const Value.absent(),
+                required DateTime dataAsOf,
+                required int barsProcessed,
+                required int sampleCount,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => StrategyBacktestRunsCompanion.insert(
+                id: id,
+                strategyId: strategyId,
+                strategyVersionId: strategyVersionId,
+                strategyVersionNumber: strategyVersionNumber,
+                stockCode: stockCode,
+                stockName: stockName,
+                market: market,
+                configJson: configJson,
+                resultJson: resultJson,
+                adjustmentMode: adjustmentMode,
+                dataFingerprint: dataFingerprint,
+                dataStart: dataStart,
+                dataEnd: dataEnd,
+                dataAsOf: dataAsOf,
+                barsProcessed: barsProcessed,
+                sampleCount: sampleCount,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StrategyBacktestRunsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({strategyId = false, strategyVersionId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (strategyId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.strategyId,
+                                    referencedTable:
+                                        $$StrategyBacktestRunsTableReferences
+                                            ._strategyIdTable(db),
+                                    referencedColumn:
+                                        $$StrategyBacktestRunsTableReferences
+                                            ._strategyIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (strategyVersionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.strategyVersionId,
+                                    referencedTable:
+                                        $$StrategyBacktestRunsTableReferences
+                                            ._strategyVersionIdTable(db),
+                                    referencedColumn:
+                                        $$StrategyBacktestRunsTableReferences
+                                            ._strategyVersionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$StrategyBacktestRunsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StrategyBacktestRunsTable,
+      StrategyBacktestRunRow,
+      $$StrategyBacktestRunsTableFilterComposer,
+      $$StrategyBacktestRunsTableOrderingComposer,
+      $$StrategyBacktestRunsTableAnnotationComposer,
+      $$StrategyBacktestRunsTableCreateCompanionBuilder,
+      $$StrategyBacktestRunsTableUpdateCompanionBuilder,
+      (StrategyBacktestRunRow, $$StrategyBacktestRunsTableReferences),
+      StrategyBacktestRunRow,
+      PrefetchHooks Function({bool strategyId, bool strategyVersionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4888,4 +10373,15 @@ class $AppDatabaseManager {
       $$StrategyHitRecordsTableTableManager(_db, _db.strategyHitRecords);
   $$StrategyReviewsTableTableManager get strategyReviews =>
       $$StrategyReviewsTableTableManager(_db, _db.strategyReviews);
+  $$StrategySourcesTableTableManager get strategySources =>
+      $$StrategySourcesTableTableManager(_db, _db.strategySources);
+  $$StrategyVersionsTableTableManager get strategyVersions =>
+      $$StrategyVersionsTableTableManager(_db, _db.strategyVersions);
+  $$StrategyVersionSourcesTableTableManager get strategyVersionSources =>
+      $$StrategyVersionSourcesTableTableManager(
+        _db,
+        _db.strategyVersionSources,
+      );
+  $$StrategyBacktestRunsTableTableManager get strategyBacktestRuns =>
+      $$StrategyBacktestRunsTableTableManager(_db, _db.strategyBacktestRuns);
 }

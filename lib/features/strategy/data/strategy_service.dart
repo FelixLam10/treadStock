@@ -1,14 +1,26 @@
 import 'dart:convert';
-import 'dart:isolate';
 import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../shared/utils/background_compute.dart';
 import '../domain/strategy_models.dart';
+import '../domain/strategy_knowledge_package.dart';
+import '../domain/strategy_version_diff.dart';
 import '../domain/signal_rule.dart';
 import '../domain/stock_filter.dart';
+import '../domain/backtest_models.dart';
 import '../../stock/data/kline_cache.dart';
 import 'database.dart';
+
+class StrategyVersionActivationException implements Exception {
+  final String message;
+
+  const StrategyVersionActivationException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 /// Service layer for strategy CRUD, hit records, and reviews.
 /// All operations go through Drift (SQLite).
@@ -22,8 +34,8 @@ class StrategyService {
   List<Strategy> _cache = [];
 
   StrategyService({AppDatabase? db, KlineCacheDatabase? klineCache})
-      : _db = db ?? AppDatabase(),
-        _klineCache = klineCache;
+    : _db = db ?? AppDatabase(),
+      _klineCache = klineCache;
 
   /// Initialize: load all strategies and compute stats.
   Future<void> init() async {
@@ -33,6 +45,7 @@ class StrategyService {
   Future<void> _init() async {
     await _db.ensureDefaultStrategy();
     await reloadCache();
+    await _ensureVersionBaselines();
     // Fire-and-forget: backfill from local K-line cache without blocking startup.
     backfillFromLocalData();
   }
@@ -53,8 +66,9 @@ class StrategyService {
     // Prepare serializable input for each strategy
     final inputs = <List<dynamic>>[];
     for (final row in rows) {
-      final records =
-          allHitRecords.where((r) => r.strategyId == row.id).toList();
+      final records = allHitRecords
+          .where((r) => r.strategyId == row.id)
+          .toList();
       inputs.add([
         records.map((r) => r.actualChange5d).toList(),
         records.map((r) => r.isHit).toList(),
@@ -118,8 +132,8 @@ class StrategyService {
         : const Value.absent();
     final Value<String?> stockFilterVal =
         (form.stockFilter != null && form.stockFilter!.isActive)
-            ? Value(jsonEncode(form.stockFilter!.toJson()))
-            : const Value.absent();
+        ? Value(jsonEncode(form.stockFilter!.toJson()))
+        : const Value.absent();
 
     await _db
         .into(_db.strategies)
@@ -149,6 +163,14 @@ class StrategyService {
           ),
         );
 
+    await _insertManualVersion(
+      strategyId: id,
+      form: form,
+      createdAt: now,
+      isEnabled: true,
+      status: 'active',
+    );
+
     await reloadCache();
     return _cache.firstWhere((s) => s.id == id);
   }
@@ -156,6 +178,10 @@ class StrategyService {
   /// Update an existing strategy.
   Future<Strategy> updateStrategy(String id, StrategyFormData form) async {
     final now = DateTime.now();
+    final existing = getStrategy(id);
+    if (existing == null) {
+      throw StateError('Strategy not found: $id');
+    }
 
     // Serialize rules and groups to JSON
     final Value<String?> entryRulesVal = form.entryRules.isNotEmpty
@@ -172,8 +198,8 @@ class StrategyService {
         : const Value.absent();
     final Value<String?> stockFilterVal =
         (form.stockFilter != null && form.stockFilter!.isActive)
-            ? Value(jsonEncode(form.stockFilter!.toJson()))
-            : const Value.absent();
+        ? Value(jsonEncode(form.stockFilter!.toJson()))
+        : const Value.absent();
 
     await (_db.update(_db.strategies)..where((t) => t.id.equals(id))).write(
       StrategiesCompanion(
@@ -197,6 +223,14 @@ class StrategyService {
       ),
     );
 
+    await _insertManualVersion(
+      strategyId: id,
+      form: form,
+      createdAt: now,
+      isEnabled: existing.isEnabled,
+      status: existing.isEnabled ? 'active' : 'draft',
+    );
+
     await reloadCache();
     return _cache.firstWhere((s) => s.id == id);
   }
@@ -214,17 +248,656 @@ class StrategyService {
     await (_db.delete(
       _db.strategyReviews,
     )..where((t) => t.strategyId.equals(id))).go();
+    await (_db.delete(
+      _db.strategyBacktestRuns,
+    )..where((t) => t.strategyId.equals(id))).go();
+    final versions = await (_db.select(
+      _db.strategyVersions,
+    )..where((t) => t.strategyId.equals(id))).get();
+    for (final version in versions) {
+      await (_db.delete(
+        _db.strategyVersionSources,
+      )..where((t) => t.versionId.equals(version.id))).go();
+    }
+    await (_db.delete(
+      _db.strategyVersions,
+    )..where((t) => t.strategyId.equals(id))).go();
+    await (_db.delete(
+      _db.strategySources,
+    )..where((t) => t.strategyId.equals(id))).go();
     await (_db.delete(_db.strategies)..where((t) => t.id.equals(id))).go();
     await reloadCache();
   }
 
   /// Toggle strategy enabled/disabled status.
-  Future<void> toggleEnabled(String id, bool isEnabled) async {
+  Future<bool> toggleEnabled(String id, bool isEnabled) async {
+    if (isEnabled && !await canEnableStrategy(id)) {
+      return false;
+    }
     final now = DateTime.now();
     await (_db.update(_db.strategies)..where((t) => t.id.equals(id))).write(
       StrategiesCompanion(isEnabled: Value(isEnabled), updatedAt: Value(now)),
     );
+    if (isEnabled) {
+      final latestApplicable = await _latestApplicableVersion(id);
+      if (latestApplicable != null && latestApplicable.status == 'draft') {
+        await (_db.update(_db.strategyVersions)
+              ..where((t) => t.id.equals(latestApplicable.id)))
+            .write(const StrategyVersionsCompanion(status: Value('active')));
+      }
+    }
     await reloadCache();
+    return true;
+  }
+
+  // ── Knowledge sources & immutable versions ─────────────────
+
+  /// Imports a reviewed agent package transactionally.
+  ///
+  /// A new strategy is always created disabled. When [targetStrategyId] is
+  /// supplied, the current strategy remains untouched and the import is saved
+  /// as a candidate version for later comparison and activation.
+  Future<StrategyKnowledgeImportResult> importKnowledgePackage(
+    StrategyKnowledgePackage package, {
+    bool retainSanitizedText = false,
+    String? targetStrategyId,
+  }) async {
+    await init();
+    final existing = targetStrategyId == null
+        ? null
+        : getStrategy(targetStrategyId);
+    if (targetStrategyId != null && existing == null) {
+      throw StateError('Strategy not found: $targetStrategyId');
+    }
+
+    final now = DateTime.now();
+    final strategyId = existing?.id ?? _uuid.v4();
+    final versionId = _uuid.v4();
+    var versionNumber = 1;
+
+    await _db.transaction(() async {
+      if (existing == null) {
+        final form = package.form;
+        await _db
+            .into(_db.strategies)
+            .insert(
+              StrategiesCompanion.insert(
+                id: strategyId,
+                name: form.name.trim(),
+                description: Value(form.description.trim()),
+                maShortPeriod: Value(form.maShortPeriod),
+                maLongPeriod: Value(form.maLongPeriod),
+                bollPeriod: Value(form.bollPeriod),
+                bollStdDev: Value(form.bollStdDev),
+                weightMA: Value(form.weightMA),
+                weightBoll: Value(form.weightBoll),
+                weightVol: Value(form.weightVol),
+                weightTrend: Value(form.weightTrend),
+                recommendThreshold: Value(form.recommendThreshold),
+                entryRulesJson: _rulesValue(form.entryRules),
+                exitRulesJson: _rulesValue(form.exitRules),
+                entryGroupsJson: _groupsValue(form.entryGroups),
+                exitGroupsJson: _groupsValue(form.exitGroups),
+                stockFilterJson: _stockFilterValue(form.stockFilter),
+                isEnabled: const Value(false),
+                isDefault: const Value(false),
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+      }
+
+      final existingVersions = await (_db.select(
+        _db.strategyVersions,
+      )..where((t) => t.strategyId.equals(strategyId))).get();
+      existingVersions.sort(
+        (a, b) => b.versionNumber.compareTo(a.versionNumber),
+      );
+      versionNumber = existingVersions.isEmpty
+          ? 1
+          : existingVersions.first.versionNumber + 1;
+      final previousVersionId = existingVersions.isEmpty
+          ? null
+          : existingVersions.first.id;
+
+      final snapshot = _strategyFromForm(
+        id: strategyId,
+        form: package.form,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+        isEnabled: false,
+        isDefault: existing?.isDefault ?? false,
+      );
+      await _db
+          .into(_db.strategyVersions)
+          .insert(
+            StrategyVersionsCompanion.insert(
+              id: versionId,
+              strategyId: strategyId,
+              versionNumber: versionNumber,
+              status: existing == null ? 'draft' : 'candidate',
+              strategyType: package.strategyType.code,
+              strategySnapshotJson: jsonEncode(snapshot.toJson()),
+              packageJson: Value(
+                jsonEncode(
+                  _packageJsonForStorage(
+                    package,
+                    retainSanitizedText: retainSanitizedText,
+                  ),
+                ),
+              ),
+              applicabilityJson: jsonEncode(package.applicability.toJson()),
+              riskNotesJson: jsonEncode(package.riskNotes),
+              pendingQuestionsJson: jsonEncode(package.pendingQuestions),
+              compatibilityIssuesJson: jsonEncode(
+                package.compatibilityIssues
+                    .map((issue) => issue.toJson())
+                    .toList(),
+              ),
+              previousVersionId: Value(previousVersionId),
+              createdAt: now,
+            ),
+          );
+
+      final sourceIdsByExternalRef = <String, String>{};
+      for (final source in package.sources) {
+        final duplicate =
+            await (_db.select(_db.strategySources)..where(
+                  (t) =>
+                      t.strategyId.equals(strategyId) &
+                      t.fingerprint.equals(source.fingerprint),
+                ))
+                .getSingleOrNull();
+        final sourceId = duplicate?.id ?? _uuid.v4();
+        if (duplicate == null) {
+          await _db
+              .into(_db.strategySources)
+              .insert(
+                StrategySourcesCompanion.insert(
+                  id: sourceId,
+                  strategyId: strategyId,
+                  externalRef: source.externalRef,
+                  sourceType: source.kind.code,
+                  speaker: Value(source.speaker),
+                  capturedAt: Value(source.capturedAt),
+                  summary: source.summary,
+                  sanitizedText: Value(
+                    retainSanitizedText ? source.sanitizedText : null,
+                  ),
+                  fingerprint: source.fingerprint,
+                  createdAt: now,
+                ),
+              );
+        }
+        sourceIdsByExternalRef[source.externalRef] = sourceId;
+      }
+
+      for (final entry in sourceIdsByExternalRef.entries) {
+        final ruleIds = package.rules
+            .where((rule) => rule.sourceRefs.contains(entry.key))
+            .map((rule) => rule.id)
+            .toList();
+        await _db
+            .into(_db.strategyVersionSources)
+            .insert(
+              StrategyVersionSourcesCompanion.insert(
+                versionId: versionId,
+                sourceId: entry.value,
+                ruleIdsJson: jsonEncode(ruleIds),
+              ),
+            );
+      }
+    });
+
+    if (existing == null) {
+      await reloadCache();
+    }
+    return StrategyKnowledgeImportResult(
+      strategyId: strategyId,
+      versionId: versionId,
+      versionNumber: versionNumber,
+      createdStrategy: existing == null,
+    );
+  }
+
+  Future<List<StrategyVersionInfo>> getStrategyVersions(
+    String strategyId,
+  ) async {
+    final versions =
+        await (_db.select(_db.strategyVersions)
+              ..where((t) => t.strategyId.equals(strategyId))
+              ..orderBy([(t) => OrderingTerm.desc(t.versionNumber)]))
+            .get();
+    if (versions.isEmpty) return const [];
+
+    final sourceRows = await (_db.select(
+      _db.strategySources,
+    )..where((t) => t.strategyId.equals(strategyId))).get();
+    final sourceById = {for (final source in sourceRows) source.id: source};
+    final versionIds = versions.map((version) => version.id).toSet();
+    final links = await _db.select(_db.strategyVersionSources).get();
+
+    return versions.map((version) {
+      final versionLinks = links
+          .where((link) => versionIds.contains(link.versionId))
+          .where((link) => link.versionId == version.id)
+          .toList();
+      final sources = versionLinks.map((link) {
+        final row = sourceById[link.sourceId]!;
+        return StrategySourceInfo(
+          id: row.id,
+          kind: _parseSourceKind(row.sourceType),
+          speaker: row.speaker,
+          capturedAt: row.capturedAt,
+          summary: row.summary,
+          hasStoredText: row.sanitizedText?.isNotEmpty == true,
+          ruleIds: _decodeStringList(link.ruleIdsJson),
+        );
+      }).toList();
+      return StrategyVersionInfo(
+        id: version.id,
+        strategyId: version.strategyId,
+        versionNumber: version.versionNumber,
+        status: version.status,
+        strategyType: _parseKnowledgeType(version.strategyType),
+        riskNotes: _decodeStringList(version.riskNotesJson),
+        pendingQuestions: _decodeStringList(version.pendingQuestionsJson),
+        compatibilityIssues: _decodeCompatibilityIssues(
+          version.compatibilityIssuesJson,
+        ),
+        previousVersionId: version.previousVersionId,
+        createdAt: version.createdAt,
+        sources: sources,
+        strategySnapshot: Strategy.fromJson(
+          jsonDecode(version.strategySnapshotJson) as Map<String, dynamic>,
+        ),
+      );
+    }).toList();
+  }
+
+  Future<StrategyVersionInfo?> getStrategyVersion(
+    String strategyId, {
+    String? versionId,
+  }) async {
+    final versions = await getStrategyVersions(strategyId);
+    if (versions.isEmpty) return null;
+    if (versionId != null) {
+      return versions.where((version) => version.id == versionId).firstOrNull;
+    }
+    return versions
+            .where((version) => version.status == 'active')
+            .firstOrNull ??
+        versions.where((version) => version.status == 'draft').firstOrNull ??
+        versions.first;
+  }
+
+  Future<StrategyVersionDiff> getStrategyVersionDiff(
+    String strategyId,
+    String versionId,
+  ) async {
+    final versions = await getStrategyVersions(strategyId);
+    final candidate = versions
+        .where((version) => version.id == versionId)
+        .firstOrNull;
+    if (candidate == null) {
+      throw StateError('Strategy version not found: $versionId');
+    }
+    final baseline = candidate.previousVersionId == null
+        ? null
+        : versions
+              .where((version) => version.id == candidate.previousVersionId)
+              .firstOrNull;
+    return StrategyVersionDiff.compare(
+      baseline: baseline,
+      candidate: candidate,
+    );
+  }
+
+  /// Makes an immutable version the current strategy configuration.
+  ///
+  /// Existing snapshots and version-bound backtests are retained. Pending or
+  /// engine-blocking versions can never be activated. A detected opposite rule
+  /// requires explicit confirmation from the UI before the transaction runs.
+  Future<StrategyVersionInfo> activateStrategyVersion(
+    String strategyId,
+    String versionId, {
+    bool confirmedConflicts = false,
+  }) async {
+    await init();
+    final versions = await getStrategyVersions(strategyId);
+    final target = versions
+        .where((version) => version.id == versionId)
+        .firstOrNull;
+    if (target == null) {
+      throw const StrategyVersionActivationException('策略版本不存在');
+    }
+    if (target.status == 'active') return target;
+    if (!target.canEnable) {
+      throw const StrategyVersionActivationException(
+        '仍有待确认问题或当前引擎不支持的规则，暂不能激活',
+      );
+    }
+
+    final diff = await getStrategyVersionDiff(strategyId, versionId);
+    if (diff.hasConflicts && !confirmedConflicts) {
+      throw const StrategyVersionActivationException('检测到相反规则，请确认差异后再激活');
+    }
+
+    final current = getStrategy(strategyId);
+    if (current == null) {
+      throw const StrategyVersionActivationException('策略不存在');
+    }
+    final snapshot = target.strategySnapshot;
+    final now = DateTime.now();
+
+    await _db.transaction(() async {
+      await (_db.update(_db.strategyVersions)..where(
+            (table) =>
+                table.strategyId.equals(strategyId) &
+                table.status.equals('active'),
+          ))
+          .write(const StrategyVersionsCompanion(status: Value('archived')));
+      await (_db.update(_db.strategyVersions)
+            ..where((table) => table.id.equals(versionId)))
+          .write(const StrategyVersionsCompanion(status: Value('active')));
+      await (_db.update(
+        _db.strategies,
+      )..where((table) => table.id.equals(strategyId))).write(
+        StrategiesCompanion(
+          name: Value(snapshot.name),
+          description: Value(snapshot.description),
+          maShortPeriod: Value(snapshot.maShortPeriod),
+          maLongPeriod: Value(snapshot.maLongPeriod),
+          bollPeriod: Value(snapshot.bollPeriod),
+          bollStdDev: Value(snapshot.bollStdDev),
+          weightMA: Value(snapshot.weightMA),
+          weightBoll: Value(snapshot.weightBoll),
+          weightVol: Value(snapshot.weightVol),
+          weightTrend: Value(snapshot.weightTrend),
+          recommendThreshold: Value(snapshot.recommendThreshold),
+          entryRulesJson: _nullableRulesValue(snapshot.entryRules),
+          exitRulesJson: _nullableRulesValue(snapshot.exitRules),
+          entryGroupsJson: _nullableGroupsValue(snapshot.entryGroups),
+          exitGroupsJson: _nullableGroupsValue(snapshot.exitGroups),
+          stockFilterJson: Value(
+            snapshot.stockFilter?.isActive == true
+                ? jsonEncode(snapshot.stockFilter!.toJson())
+                : null,
+          ),
+          updatedAt: Value(now),
+        ),
+      );
+    });
+
+    await reloadCache();
+    return (await getStrategyVersions(
+      strategyId,
+    )).firstWhere((version) => version.id == versionId);
+  }
+
+  // ── Version-bound backtest reports ─────────────────────────────
+
+  Future<void> saveBacktestReport(BacktestReport report) async {
+    await _db
+        .into(_db.strategyBacktestRuns)
+        .insert(
+          StrategyBacktestRunsCompanion.insert(
+            id: report.id,
+            strategyId: report.strategyId,
+            strategyVersionId: report.strategyVersionId,
+            strategyVersionNumber: report.strategyVersionNumber,
+            stockCode: report.result.stockCode,
+            stockName: report.stockName,
+            market: report.market,
+            configJson: jsonEncode(report.config.toJson()),
+            resultJson: jsonEncode(report.result.toJson()),
+            adjustmentMode: report.adjustmentMode.name,
+            dataFingerprint: report.dataFingerprint,
+            dataStart: Value(report.result.startDate),
+            dataEnd: Value(report.result.endDate),
+            dataAsOf: report.dataAsOf,
+            barsProcessed: report.result.barsProcessed,
+            sampleCount: report.result.totalTrades,
+            createdAt: report.createdAt,
+          ),
+        );
+  }
+
+  Future<List<BacktestReport>> getBacktestReports(
+    String strategyId, {
+    String? stockCode,
+  }) async {
+    final query = _db.select(_db.strategyBacktestRuns)
+      ..where((row) => row.strategyId.equals(strategyId));
+    if (stockCode != null) {
+      query.where((row) => row.stockCode.equals(stockCode));
+    }
+    query.orderBy([(row) => OrderingTerm.desc(row.createdAt)]);
+    final rows = await query.get();
+    return rows.map(_backtestRowToDomain).toList();
+  }
+
+  BacktestReport _backtestRowToDomain(StrategyBacktestRunRow row) {
+    return BacktestReport(
+      id: row.id,
+      strategyId: row.strategyId,
+      strategyVersionId: row.strategyVersionId,
+      strategyVersionNumber: row.strategyVersionNumber,
+      stockName: row.stockName,
+      market: row.market,
+      config: BacktestConfig.fromJson(
+        jsonDecode(row.configJson) as Map<String, dynamic>,
+      ),
+      adjustmentMode: BacktestAdjustmentMode.values.byName(row.adjustmentMode),
+      dataFingerprint: row.dataFingerprint,
+      dataAsOf: row.dataAsOf,
+      createdAt: row.createdAt,
+      result: BacktestResult.fromJson(
+        jsonDecode(row.resultJson) as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  Future<bool> canEnableStrategy(String strategyId) async {
+    final latest = await _latestApplicableVersion(strategyId);
+    if (latest == null) return true;
+    final pending = _decodeStringList(latest.pendingQuestionsJson);
+    final issues = _decodeCompatibilityIssues(latest.compatibilityIssuesJson);
+    return pending.isEmpty && issues.every((issue) => !issue.blocking);
+  }
+
+  Future<void> _ensureVersionBaselines() async {
+    for (final strategy in _cache) {
+      final existing =
+          await (_db.select(_db.strategyVersions)
+                ..where((t) => t.strategyId.equals(strategy.id))
+                ..limit(1))
+              .getSingleOrNull();
+      if (existing != null) continue;
+      await _insertVersionSnapshot(
+        strategy: strategy,
+        status: strategy.isEnabled ? 'active' : 'draft',
+        strategyType: StrategyKnowledgeType.custom,
+      );
+    }
+  }
+
+  Future<void> _insertManualVersion({
+    required String strategyId,
+    required StrategyFormData form,
+    required DateTime createdAt,
+    required bool isEnabled,
+    required String status,
+  }) async {
+    final existing = getStrategy(strategyId);
+    final strategy = _strategyFromForm(
+      id: strategyId,
+      form: form,
+      createdAt: existing?.createdAt ?? createdAt,
+      updatedAt: createdAt,
+      isEnabled: isEnabled,
+      isDefault: existing?.isDefault ?? false,
+    );
+    await _insertVersionSnapshot(
+      strategy: strategy,
+      status: status,
+      strategyType: StrategyKnowledgeType.custom,
+    );
+  }
+
+  Future<void> _insertVersionSnapshot({
+    required Strategy strategy,
+    required String status,
+    required StrategyKnowledgeType strategyType,
+  }) async {
+    final existingVersions = await (_db.select(
+      _db.strategyVersions,
+    )..where((t) => t.strategyId.equals(strategy.id))).get();
+    existingVersions.sort((a, b) => b.versionNumber.compareTo(a.versionNumber));
+    final previous = existingVersions.isEmpty ? null : existingVersions.first;
+    await _db
+        .into(_db.strategyVersions)
+        .insert(
+          StrategyVersionsCompanion.insert(
+            id: _uuid.v4(),
+            strategyId: strategy.id,
+            versionNumber: (previous?.versionNumber ?? 0) + 1,
+            status: status,
+            strategyType: strategyType.code,
+            strategySnapshotJson: jsonEncode(strategy.toJson()),
+            applicabilityJson: '{}',
+            riskNotesJson: '[]',
+            pendingQuestionsJson: '[]',
+            compatibilityIssuesJson: '[]',
+            previousVersionId: Value(previous?.id),
+            createdAt: strategy.updatedAt,
+          ),
+        );
+  }
+
+  Future<StrategyVersionRow?> _latestApplicableVersion(
+    String strategyId,
+  ) async {
+    final versions = await (_db.select(
+      _db.strategyVersions,
+    )..where((t) => t.strategyId.equals(strategyId))).get();
+    final applicable =
+        versions.where((version) => version.status != 'candidate').toList()
+          ..sort((a, b) => b.versionNumber.compareTo(a.versionNumber));
+    return applicable.isEmpty ? null : applicable.first;
+  }
+
+  Strategy _strategyFromForm({
+    required String id,
+    required StrategyFormData form,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required bool isEnabled,
+    required bool isDefault,
+  }) {
+    return Strategy(
+      id: id,
+      name: form.name.trim(),
+      description: form.description.trim(),
+      maShortPeriod: form.maShortPeriod,
+      maLongPeriod: form.maLongPeriod,
+      bollPeriod: form.bollPeriod,
+      bollStdDev: form.bollStdDev,
+      weightMA: form.weightMA,
+      weightBoll: form.weightBoll,
+      weightVol: form.weightVol,
+      weightTrend: form.weightTrend,
+      recommendThreshold: form.recommendThreshold,
+      isEnabled: isEnabled,
+      isDefault: isDefault,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      entryRules: form.entryRules.isEmpty ? null : form.entryRules,
+      exitRules: form.exitRules.isEmpty ? null : form.exitRules,
+      entryGroups: form.entryGroups.isEmpty ? null : form.entryGroups,
+      exitGroups: form.exitGroups.isEmpty ? null : form.exitGroups,
+      stockFilter: form.stockFilter,
+    );
+  }
+
+  Value<String?> _rulesValue(List<SignalRule> rules) => rules.isEmpty
+      ? const Value.absent()
+      : Value(jsonEncode(rules.map((rule) => rule.toJson()).toList()));
+
+  Value<String?> _nullableRulesValue(List<SignalRule>? rules) => Value(
+    rules == null
+        ? null
+        : jsonEncode(rules.map((rule) => rule.toJson()).toList()),
+  );
+
+  Value<String?> _groupsValue(List<RuleGroup> groups) => groups.isEmpty
+      ? const Value.absent()
+      : Value(jsonEncode(groups.map((group) => group.toJson()).toList()));
+
+  Value<String?> _nullableGroupsValue(List<RuleGroup>? groups) => Value(
+    groups == null
+        ? null
+        : jsonEncode(groups.map((group) => group.toJson()).toList()),
+  );
+
+  Value<String?> _stockFilterValue(StockFilter? filter) =>
+      filter != null && filter.isActive
+      ? Value(jsonEncode(filter.toJson()))
+      : const Value.absent();
+
+  Map<String, dynamic> _packageJsonForStorage(
+    StrategyKnowledgePackage package, {
+    required bool retainSanitizedText,
+  }) {
+    final json = package.toJson();
+    if (!retainSanitizedText) {
+      final sources = (json['sources'] as List)
+          .map((source) => Map<String, dynamic>.from(source as Map))
+          .toList();
+      for (final source in sources) {
+        source.remove('sanitizedText');
+      }
+      json['sources'] = sources;
+    }
+    return json;
+  }
+
+  List<String> _decodeStringList(String json) {
+    try {
+      return (jsonDecode(json) as List).map((item) => '$item').toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  List<StrategyCompatibilityIssue> _decodeCompatibilityIssues(String json) {
+    try {
+      return (jsonDecode(json) as List)
+          .map(
+            (item) => StrategyCompatibilityIssue.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  StrategyKnowledgeType _parseKnowledgeType(String value) {
+    try {
+      return StrategyKnowledgeTypeX.parse(value);
+    } catch (_) {
+      return StrategyKnowledgeType.custom;
+    }
+  }
+
+  StrategySourceKind _parseSourceKind(String value) {
+    try {
+      return StrategySourceKindX.parse(value);
+    } catch (_) {
+      return StrategySourceKind.other;
+    }
   }
 
   // ── Hit Records ────────────────────────────────────────────
@@ -361,12 +1034,10 @@ class StrategyService {
       if (klines == null || klines.isEmpty) continue;
 
       // Sort klines by date ascending
-      final sorted = List.of(klines)
-        ..sort((a, b) => a.date.compareTo(b.date));
+      final sorted = List.of(klines)..sort((a, b) => a.date.compareTo(b.date));
 
       // Find klines on or after the recommend date
-      final afterRec = sorted.where((k) =>
-          !k.date.isBefore(recDate)).toList();
+      final afterRec = sorted.where((k) => !k.date.isBefore(recDate)).toList();
       if (afterRec.isEmpty) continue;
 
       // Need at least 5 trading days after the recommend date
@@ -449,11 +1120,15 @@ class StrategyService {
     final actualChanges = records.map((r) => r.actualChange5d).toList();
     final isHitFlags = records.map((r) => r.isHit).toList();
     final totalRecords = records.length;
-    final tradingDaysRun =
-        DateTime.now().difference(strategy.createdAt).inDays;
+    final tradingDaysRun = DateTime.now().difference(strategy.createdAt).inDays;
 
-    return Isolate.run(
-      () => computeStatsPure(actualChanges, isHitFlags, totalRecords, tradingDaysRun),
+    return runInBackground(
+      () => computeStatsPure(
+        actualChanges,
+        isHitFlags,
+        totalRecords,
+        tradingDaysRun,
+      ),
     );
   }
 
@@ -828,13 +1503,17 @@ class StrategyService {
     if (row.entryRulesJson != null) {
       try {
         final list = jsonDecode(row.entryRulesJson!) as List;
-        entryRules = list.map((e) => SignalRule.fromJson(e as Map<String, dynamic>)).toList();
+        entryRules = list
+            .map((e) => SignalRule.fromJson(e as Map<String, dynamic>))
+            .toList();
       } catch (_) {}
     }
     if (row.exitRulesJson != null) {
       try {
         final list = jsonDecode(row.exitRulesJson!) as List;
-        exitRules = list.map((e) => SignalRule.fromJson(e as Map<String, dynamic>)).toList();
+        exitRules = list
+            .map((e) => SignalRule.fromJson(e as Map<String, dynamic>))
+            .toList();
       } catch (_) {}
     }
 
@@ -844,13 +1523,17 @@ class StrategyService {
     if (row.entryGroupsJson != null) {
       try {
         final list = jsonDecode(row.entryGroupsJson!) as List;
-        entryGroups = list.map((e) => RuleGroup.fromJson(e as Map<String, dynamic>)).toList();
+        entryGroups = list
+            .map((e) => RuleGroup.fromJson(e as Map<String, dynamic>))
+            .toList();
       } catch (_) {}
     }
     if (row.exitGroupsJson != null) {
       try {
         final list = jsonDecode(row.exitGroupsJson!) as List;
-        exitGroups = list.map((e) => RuleGroup.fromJson(e as Map<String, dynamic>)).toList();
+        exitGroups = list
+            .map((e) => RuleGroup.fromJson(e as Map<String, dynamic>))
+            .toList();
       } catch (_) {}
     }
 
@@ -948,9 +1631,8 @@ class StrategyService {
   Future<List<StrategyStats>> _runBatchStatsInIsolate(
     List<List<dynamic>> inputs,
   ) async {
-    return await Isolate.run(() => computeAllStatsPure(inputs));
+    return runInBackground(() => computeAllStatsPure(inputs));
   }
-
 }
 
 class _ReviewRecordSelection {
@@ -998,7 +1680,8 @@ StrategyStats computeStatsPure(
     final avgChangeScore = ((avgChange + 10) / 2).clamp(0.0, 10.0);
     // Stability: lower standard deviation = higher score
     final mean = avgChange;
-    final variance = evaluatedChanges
+    final variance =
+        evaluatedChanges
             .map((c) => (c - mean) * (c - mean))
             .reduce((a, b) => a + b) /
         evaluatedChanges.length;
@@ -1010,7 +1693,9 @@ StrategyStats computeStatsPure(
   }
 
   return StrategyStats(
-    hitRate: evaluatedChanges.isEmpty ? 0.0 : hitCount / evaluatedChanges.length,
+    hitRate: evaluatedChanges.isEmpty
+        ? 0.0
+        : hitCount / evaluatedChanges.length,
     maxGain: maxGain,
     maxLoss: maxLoss,
     avgChange: avgChange,
@@ -1030,6 +1715,11 @@ List<StrategyStats> computeAllStatsPure(List<List<dynamic>> inputs) {
     final isHitFlags = (input[1] as List).cast<bool?>();
     final totalRecords = input[2] as int;
     final tradingDaysRun = input[3] as int;
-    return computeStatsPure(actualChanges, isHitFlags, totalRecords, tradingDaysRun);
+    return computeStatsPure(
+      actualChanges,
+      isHitFlags,
+      totalRecords,
+      tradingDaysRun,
+    );
   }).toList();
 }

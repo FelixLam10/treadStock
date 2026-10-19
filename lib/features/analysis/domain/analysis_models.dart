@@ -144,7 +144,9 @@ class DownsideAlertResult {
     this.resistancePrice,
   });
 
-  static const DownsideAlertResult empty = DownsideAlertResult(triggered: false);
+  static const DownsideAlertResult empty = DownsideAlertResult(
+    triggered: false,
+  );
 }
 
 class DailyRecommendation {
@@ -157,6 +159,7 @@ class DailyRecommendation {
   final StockScore? score;
   final bool isBandLow;
   final StockPrediction? prediction; // next-session prediction
+  final bool matchesStrategyRules;
 
   const DailyRecommendation({
     required this.code,
@@ -168,6 +171,7 @@ class DailyRecommendation {
     this.score,
     this.isBandLow = false,
     this.prediction,
+    this.matchesStrategyRules = false,
   });
 
   String get fullCode => '$code.$market';
